@@ -6,6 +6,7 @@ using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Web.Security;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 
 namespace PimsApp
 {
@@ -18,7 +19,7 @@ namespace PimsApp
             _configuration = configuration;
         }
 
-        protected void Page_Load(object sender, EventArgs e)
+        protected async void Page_Load(object sender, EventArgs e)
         {
             // Use nullable reference types
             List<string>? roles = Session["Roles"] as List<string>;
@@ -29,12 +30,12 @@ namespace PimsApp
                 if (roles is { Count: > 0 } && roles.Intersect(new[] { "Admin", "NormalUser", "BothRoles" }).Any())
                 {
                     SetupUI(roles);
-                    BindComplaints();
+                    await BindComplaintsAsync(); // Changed to async
                     DisplaySuccessMessage();
                 }
                 else
                 {
-                    Response.Redirect("Login.aspx", true); // Added true for security
+                    Response.Redirect("Login.aspx", true);
                 }
             }
         }
@@ -75,7 +76,7 @@ namespace PimsApp
             }
         }
 
-        private void BindComplaints()
+        private async Task BindComplaintsAsync() // Changed to async
         {
             // Use configuration injection instead of ConfigurationManager
             string connectionString = _configuration.GetConnectionString("YourConnectionString");
@@ -90,9 +91,9 @@ namespace PimsApp
             {
                 cmd.Parameters.AddWithValue("@Email", email ?? "");
             }
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            gvComplaints.DataSource = ReadComplaints(reader);
+            await conn.OpenAsync(); // Changed to async
+            using var reader = await cmd.ExecuteReaderAsync(); // Changed to async
+            gvComplaints.DataSource = await ReadComplaintsAsync(reader); // Changed to async
             gvComplaints.DataBind();
         }
 
@@ -101,10 +102,10 @@ namespace PimsApp
                 ? "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints ORDER BY Id DESC"
                 : "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints WHERE Email = @Email ORDER BY Id DESC";
 
-        private static List<ComplaintViewModel> ReadComplaints(SqlDataReader reader)
+        private static async Task<List<ComplaintViewModel>> ReadComplaintsAsync(SqlDataReader reader) // Changed to async
         {
             var complaints = new List<ComplaintViewModel>();
-            while (reader.Read())
+            while (await reader.ReadAsync()) // Changed to async
             {
                 complaints.Add(new ComplaintViewModel
                 {
@@ -129,7 +130,7 @@ namespace PimsApp
         {
             Session.Abandon();
             FormsAuthentication.SignOut();
-            Response.Redirect("Login.aspx", true); // Added true for security
+            Response.Redirect("Login.aspx", true);
         }
 
         protected string GetUserRoleClass() =>
