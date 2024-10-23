@@ -7,7 +7,7 @@ using System.Web.UI.WebControls;
 
 namespace PimsApp
 {
-    public partial class Home
+    public partial class Home : Page // Modernization: Inherit from Page for better type safety
     {
         // Modernization: Use nullable reference types for better null safety
         // Add the nullable annotation to all reference types
@@ -35,8 +35,7 @@ namespace PimsApp
         /// <summary>
         /// lblSuccessMessage control.
         /// </summary>
-        // Modernization: Fixed typo in variable name
-        protected Label? lblSuccessMessage;
+        protected Label? lblSuccessMessage; // Modernization: Fixed typo in variable name
 
         /// <summary>
         /// btnRegisterComplaint control.
@@ -78,6 +77,41 @@ namespace PimsApp
         {
             base.OnInit(e);
             ValidateControls();
+        }
+
+        // Modernization: Add a method for secure logout
+        protected void Logout_Click(object sender, EventArgs e)
+        {
+            // Implement secure logout logic here
+            // For example:
+            // Session.Abandon();
+            // FormsAuthentication.SignOut();
+            // Response.Redirect("Login.aspx", true);
+        }
+
+        // Modernization: Add a method to register complaints securely
+        protected void RegisterComplaint_Click(object sender, EventArgs e)
+        {
+            // Implement secure complaint registration logic here
+            // Ensure to use parameterized queries or stored procedures to prevent SQL injection
+        }
+
+        // Modernization: Add a method to bind complaints data securely
+        protected void BindComplaints()
+        {
+            // Implement secure data binding logic here
+            // Use parameterized queries or stored procedures to fetch data
+            // Implement proper error handling and logging
+        }
+
+        // Modernization: Override Page_Load to handle page initialization
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            if (!IsPostBack)
+            {
+                BindComplaints();
+            }
         }
     }
 }
