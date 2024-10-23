@@ -7,13 +7,15 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+#nullable enable // Modernization: Enable nullable reference types for the entire file
+
 namespace PimsApp
 {
     public partial class Home
     {
         // Modernization: Use nullable reference types for better null safety
         // Add the nullable annotation to all reference types
-        
+
         /// <summary>
         /// form1 control.
         /// </summary>
@@ -35,9 +37,9 @@ namespace PimsApp
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl? pageTitle;
 
         /// <summary>
-        /// lblSucessMessage control.
+        /// lblSuccessMessage control.
         /// </summary>
-        // Modernization: Fix typo in variable name
+        // Modernization: Fixed typo in variable name
         protected global::System.Web.UI.WebControls.Label? lblSuccessMessage;
 
         /// <summary>
@@ -59,13 +61,20 @@ namespace PimsApp
         // Modernization: Add a method to validate that all controls are properly initialized
         protected void ValidateControls()
         {
-            if (form1 == null) throw new InvalidOperationException("form1 is not initialized");
-            if (lblWelcome == null) throw new InvalidOperationException("lblWelcome is not initialized");
-            if (btnLogout == null) throw new InvalidOperationException("btnLogout is not initialized");
-            if (pageTitle == null) throw new InvalidOperationException("pageTitle is not initialized");
-            if (lblSuccessMessage == null) throw new InvalidOperationException("lblSuccessMessage is not initialized");
-            if (btnRegisterComplaint == null) throw new InvalidOperationException("btnRegisterComplaint is not initialized");
-            if (gvComplaints == null) throw new InvalidOperationException("gvComplaints is not initialized");
+            // Modernization: Use pattern matching to check for null
+            if (form1 is null) ThrowControlNotInitializedException(nameof(form1));
+            if (lblWelcome is null) ThrowControlNotInitializedException(nameof(lblWelcome));
+            if (btnLogout is null) ThrowControlNotInitializedException(nameof(btnLogout));
+            if (pageTitle is null) ThrowControlNotInitializedException(nameof(pageTitle));
+            if (lblSuccessMessage is null) ThrowControlNotInitializedException(nameof(lblSuccessMessage));
+            if (btnRegisterComplaint is null) ThrowControlNotInitializedException(nameof(btnRegisterComplaint));
+            if (gvComplaints is null) ThrowControlNotInitializedException(nameof(gvComplaints));
+        }
+
+        // Modernization: Extract method to reduce code duplication
+        private static void ThrowControlNotInitializedException(string controlName)
+        {
+            throw new InvalidOperationException($"{controlName} is not initialized");
         }
     }
 }
