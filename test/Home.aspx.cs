@@ -19,7 +19,7 @@ namespace PimsApp
             _configuration = configuration;
         }
 
-        protected async void Page_Load(object sender, EventArgs e)
+        protected async Task Page_LoadAsync(object sender, EventArgs e) // Changed to async Task
         {
             // Use nullable reference types
             List<string>? roles = Session["Roles"] as List<string>;
@@ -30,7 +30,7 @@ namespace PimsApp
                 if (roles is { Count: > 0 } && roles.Intersect(new[] { "Admin", "NormalUser", "BothRoles" }).Any())
                 {
                     SetupUI(roles);
-                    await BindComplaintsAsync(); // Changed to async
+                    await BindComplaintsAsync();
                     DisplaySuccessMessage();
                 }
                 else
@@ -76,7 +76,7 @@ namespace PimsApp
             }
         }
 
-        private async Task BindComplaintsAsync() // Changed to async
+        private async Task BindComplaintsAsync()
         {
             // Use configuration injection instead of ConfigurationManager
             string connectionString = _configuration.GetConnectionString("YourConnectionString");
@@ -91,9 +91,9 @@ namespace PimsApp
             {
                 cmd.Parameters.AddWithValue("@Email", email ?? "");
             }
-            await conn.OpenAsync(); // Changed to async
-            using var reader = await cmd.ExecuteReaderAsync(); // Changed to async
-            gvComplaints.DataSource = await ReadComplaintsAsync(reader); // Changed to async
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+            gvComplaints.DataSource = await ReadComplaintsAsync(reader);
             gvComplaints.DataBind();
         }
 
@@ -102,10 +102,10 @@ namespace PimsApp
                 ? "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints ORDER BY Id DESC"
                 : "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints WHERE Email = @Email ORDER BY Id DESC";
 
-        private static async Task<List<ComplaintViewModel>> ReadComplaintsAsync(SqlDataReader reader) // Changed to async
+        private static async Task<List<ComplaintViewModel>> ReadComplaintsAsync(SqlDataReader reader)
         {
             var complaints = new List<ComplaintViewModel>();
-            while (await reader.ReadAsync()) // Changed to async
+            while (await reader.ReadAsync())
             {
                 complaints.Add(new ComplaintViewModel
                 {
