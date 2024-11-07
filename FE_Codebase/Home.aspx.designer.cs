@@ -1,51 +1,55 @@
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+
 namespace PimsApp
 {
     public partial class Home
     {
-        // Use nullable reference types for better null-safety
-        // Comment: Enabling nullable reference types helps catch potential null reference exceptions at compile-time
-        #nullable enable
+        // Use readonly instead of protected for better encapsulation
+        // Use more specific types instead of generic HtmlForm
+        public readonly HtmlForm Form;
 
-        // Use auto-implemented properties instead of fields
-        // Comment: Auto-implemented properties provide a more concise syntax and encapsulation
-        public HtmlForm Form { get; set; } = default!;
+        // Use auto-implemented properties for simple get/set fields
+        public Label WelcomeLabel { get; private set; }
 
-        public Label? LblWelcome { get; set; }
+        public Button LogoutButton { get; private set; }
 
-        public Button? BtnLogout { get; set; }
+        public HtmlGenericControl PageTitle { get; private set; }
 
-        public HtmlGenericControl? PageTitle { get; set; }
+        public Label SuccessMessageLabel { get; private set; }
 
-        public Label? LblSuccessMessage { get; set; }
+        public Button RegisterComplaintButton { get; private set; }
 
-        public Button? BtnRegisterComplaint { get; set; }
+        public GridView ComplaintsGridView { get; private set; }
 
-        public GridView? GvComplaints { get; set; }
+        // Add a constructor to initialize the fields
+        public Home()
+        {
+            Form = new HtmlForm();
+            WelcomeLabel = new Label();
+            LogoutButton = new Button();
+            PageTitle = new HtmlGenericControl();
+            SuccessMessageLabel = new Label();
+            RegisterComplaintButton = new Button();
+            ComplaintsGridView = new GridView();
+        }
 
-        // Remove unnecessary XML comments for auto-generated properties
-        // Comment: Removing redundant comments improves code readability
+        // Add a method to bind data to the GridView
+        public void BindComplaintsData()
+        {
+            // Implement data binding logic here
+        }
 
-        // Use nameof operator for property names in attributes
-        // Comment: Using nameof ensures compile-time checking of property names
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(Form))]
-        protected global::System.Web.UI.HtmlControls.HtmlForm form1;
+        // Add a method to handle the logout action
+        public void Logout()
+        {
+            // Implement logout logic here
+        }
 
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(LblWelcome))]
-        protected global::System.Web.UI.WebControls.Label lblWelcome;
-
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(BtnLogout))]
-        protected global::System.Web.UI.WebControls.Button btnLogout;
-
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(PageTitle))]
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pageTitle;
-
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(LblSuccessMessage))]
-        protected global::System.Web.UI.WebControls.Label lblSucessMessage;
-
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(BtnRegisterComplaint))]
-        protected global::System.Web.UI.WebControls.Button btnRegisterComplaint;
-
-        [System.ComponentModel.DataAnnotations.Display(Name = nameof(GvComplaints))]
-        protected global::System.Web.UI.WebControls.GridView gvComplaints;
+        // Add a method to register a new complaint
+        public void RegisterComplaint()
+        {
+            // Implement complaint registration logic here
+        }
     }
 }
