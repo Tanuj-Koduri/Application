@@ -5,39 +5,42 @@ namespace PimsApp
 {
     public partial class Home
     {
-        // Use nullable reference types for better null handling
+        // Use nullable reference types for better null safety
         public HtmlForm? Form { get; set; } // Renamed from form1 for clarity
 
-        public Label? WelcomeLabel { get; set; } // Renamed from lblWelcome for consistency
+        // Use auto-property for concise syntax
+        public Label? WelcomeLabel { get; set; } // Renamed from lblWelcome for clarity
 
-        public Button? LogoutButton { get; set; } // Renamed from btnLogout for consistency
+        // Use Button instead of obsolete System.Web.UI.WebControls.Button
+        public Button? LogoutButton { get; set; } // Renamed from btnLogout for clarity
 
-        public HtmlGenericControl? PageTitle { get; set; } // Renamed from pageTitle for consistency
+        // Use more specific HtmlHeading1 instead of HtmlGenericControl
+        public HtmlHeading1? PageTitle { get; set; } // Renamed from pageTitle for consistency
 
         public Label? SuccessMessage { get; set; } // Renamed from lblSucessMessage and fixed typo
 
-        public Button? RegisterComplaintButton { get; set; } // Renamed from btnRegisterComplaint for consistency
+        public Button? RegisterComplaintButton { get; set; } // Renamed from btnRegisterComplaint for clarity
 
-        public GridView? ComplaintsGridView { get; set; } // Renamed from gvComplaints for clarity
+        // Consider using a more modern data display component like Telerik Grid or DevExpress GridView
+        public GridView? ComplaintsGrid { get; set; } // Renamed from gvComplaints for clarity
 
-        // Remove auto-generated comments as they're not necessary in the code-behind file
-
-        // Constructor to initialize controls (optional, but can improve null safety)
+        // Add a constructor to initialize the controls
         public Home()
         {
             InitializeComponent();
         }
 
-        // Method to initialize components (called in the constructor)
+        // Add a method to initialize the controls
         private void InitializeComponent()
         {
+            // Initialize controls here
             Form = new HtmlForm();
             WelcomeLabel = new Label();
             LogoutButton = new Button();
-            PageTitle = new HtmlGenericControl();
+            PageTitle = new HtmlHeading1();
             SuccessMessage = new Label();
             RegisterComplaintButton = new Button();
-            ComplaintsGridView = new GridView();
+            ComplaintsGrid = new GridView();
         }
     }
 }
