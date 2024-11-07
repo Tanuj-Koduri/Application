@@ -5,51 +5,39 @@ namespace PimsApp
 {
     public partial class Home
     {
-        // Use readonly instead of protected for better encapsulation
-        // Use more specific types instead of generic HtmlForm
-        public readonly HtmlForm Form;
+        // Use nullable reference types for better null handling
+        public HtmlForm? Form { get; set; } // Renamed from form1 for clarity
 
-        // Use auto-implemented properties for simple get/set fields
-        public Label WelcomeLabel { get; private set; }
+        public Label? WelcomeLabel { get; set; } // Renamed from lblWelcome for consistency
 
-        public Button LogoutButton { get; private set; }
+        public Button? LogoutButton { get; set; } // Renamed from btnLogout for consistency
 
-        public HtmlGenericControl PageTitle { get; private set; }
+        public HtmlGenericControl? PageTitle { get; set; } // Renamed from pageTitle for consistency
 
-        public Label SuccessMessageLabel { get; private set; }
+        public Label? SuccessMessage { get; set; } // Renamed from lblSucessMessage and fixed typo
 
-        public Button RegisterComplaintButton { get; private set; }
+        public Button? RegisterComplaintButton { get; set; } // Renamed from btnRegisterComplaint for consistency
 
-        public GridView ComplaintsGridView { get; private set; }
+        public GridView? ComplaintsGridView { get; set; } // Renamed from gvComplaints for clarity
 
-        // Add a constructor to initialize the fields
+        // Remove auto-generated comments as they're not necessary in the code-behind file
+
+        // Constructor to initialize controls (optional, but can improve null safety)
         public Home()
+        {
+            InitializeComponent();
+        }
+
+        // Method to initialize components (called in the constructor)
+        private void InitializeComponent()
         {
             Form = new HtmlForm();
             WelcomeLabel = new Label();
             LogoutButton = new Button();
             PageTitle = new HtmlGenericControl();
-            SuccessMessageLabel = new Label();
+            SuccessMessage = new Label();
             RegisterComplaintButton = new Button();
             ComplaintsGridView = new GridView();
-        }
-
-        // Add a method to bind data to the GridView
-        public void BindComplaintsData()
-        {
-            // Implement data binding logic here
-        }
-
-        // Add a method to handle the logout action
-        public void Logout()
-        {
-            // Implement logout logic here
-        }
-
-        // Add a method to register a new complaint
-        public void RegisterComplaint()
-        {
-            // Implement complaint registration logic here
         }
     }
 }
