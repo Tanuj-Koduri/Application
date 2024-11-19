@@ -1,46 +1,46 @@
-using System.Web.UI.HtmlControls;
-using System.Web.UI.WebControls;
+<!DOCTYPE html>
+```
 
-namespace PimsApp
-{
-    public partial class Home
-    {
-        // Use nullable reference types for better null safety
-        public HtmlForm? Form { get; set; } // Renamed from form1 for clarity
+2. Add language attribute to the html tag:
+```html
+<html lang="en">
+```
 
-        // Use auto-property for concise syntax
-        public Label? WelcomeLabel { get; set; } // Renamed from lblWelcome for clarity
+3. Use more semantic HTML5 elements:
+```html
+<header>
+  <h1>Access to this site has been restricted.</h1>
+</header>
+<main>
+  <p>
+    <br>
+    If you believe this is an error,
+    please contact <a href="https://support.github.com">Support</a>.
+  </p>
+</main>
+<footer id="s">
+  <a href="https://githubstatus.com">GitHub Status</a> &mdash;
+  <a href="https://twitter.com/githubstatus">@githubstatus</a>
+</footer>
+```
 
-        // Use Button instead of obsolete System.Web.UI.WebControls.Button
-        public Button? LogoutButton { get; set; } // Renamed from btnLogout for clarity
+4. Consider using external CSS file instead of inline styles for better maintainability.
 
-        // Use more specific HtmlHeading1 instead of HtmlGenericControl
-        public HtmlHeading1? PageTitle { get; set; } // Renamed from pageTitle for consistency
-
-        public Label? SuccessMessage { get; set; } // Renamed from lblSucessMessage and fixed typo
-
-        public Button? RegisterComplaintButton { get; set; } // Renamed from btnRegisterComplaint for clarity
-
-        // Consider using a more modern data display component like Telerik Grid or DevExpress GridView
-        public GridView? ComplaintsGrid { get; set; } // Renamed from gvComplaints for clarity
-
-        // Add a constructor to initialize the controls
-        public Home()
-        {
-            InitializeComponent();
-        }
-
-        // Add a method to initialize the controls
-        private void InitializeComponent()
-        {
-            // Initialize controls here
-            Form = new HtmlForm();
-            WelcomeLabel = new Label();
-            LogoutButton = new Button();
-            PageTitle = new HtmlHeading1();
-            SuccessMessage = new Label();
-            RegisterComplaintButton = new Button();
-            ComplaintsGrid = new GridView();
-        }
-    }
+5. Update the media query for high-resolution displays:
+```css
+@media
+only screen and (min-resolution: 192dpi),
+only screen and (min-resolution: 2dppx) {
+  .logo-img-1x { display: none; }
+  .logo-img-2x { display: inline-block; }
 }
+```
+
+6. Add meta viewport tag for better responsive design:
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
+
+7. Consider adding some basic accessibility attributes:
+```html
+<a href="https://support.github.com" aria-label="Contact GitHub Support">Support</a>
