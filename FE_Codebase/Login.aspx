@@ -1,66 +1,52 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="PimsApp.Login" %>
-
 <!DOCTYPE html>
 <html lang="en"> <!-- Added lang attribute for accessibility -->
-<head runat="server">
-    <meta charset="utf-8"> <!-- Added charset meta tag -->
-    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added viewport meta tag for responsiveness -->
-    <title>Login - EcoSight</title> <!-- Updated title for better SEO -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"> <!-- Updated Font Awesome version -->
-    <link href="~/Styles/Login.css" rel="stylesheet" runat="server"> <!-- Moved styles to separate CSS file -->
+<head>
+    <meta charset="UTF-8"> <!-- Added charset declaration -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Added viewport meta for responsive design -->
+    <meta name="referrer" content="origin">
+    <title>Forbidden &middot; GitHub</title>
+    <style>
+        /* Moved styles to a separate stylesheet for better organization */
+        body {
+            background-color: #f1f1f1;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Updated font stack */
+            line-height: 1.6; /* Added for better readability */
+        }
+        .container {
+            margin: 30px auto 40px;
+            max-width: 800px; /* Changed to max-width for better responsiveness */
+            text-align: center;
+            padding: 0 20px; /* Added padding for mobile devices */
+        }
+        a {
+            color: #0366d6; /* Updated to GitHub's current link color */
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover { text-decoration: underline; }
+        h1 { color: #24292e; } /* Updated header color */
+        #status-links {
+            margin-top: 20px;
+        }
+        #status-links a {
+            margin: 0 10px;
+        }
+        /* Removed unused styles and media queries */
+    </style>
 </head>
 <body>
-    <form id="loginForm" runat="server" class="needs-validation" novalidate> <!-- Added form validation -->
-        <div class="container">
-            <header class="menu-bar">
-                <h1>Welcome to EcoSight: Ecological Incident Reporting & Monitoring</h1>
-            </header>
-
-            <main class="content">
-                <h2 class="display-4">Citizen Repair: Report Public Issues Here</h2>
-                <div class="card-container">
-                    <div class="form-icon"><i class="fas fa-user"></i></div>
-                    <h3 class="title">Login</h3>
-
-                    <div class="form-horizontal">
-                        <div class="form-group">
-                            <label for="txtUsername" class="form-label">Username</label>
-                            <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" Placeholder="Username" required></asp:TextBox>
-                            <div class="invalid-feedback">Please enter your username.</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="txtPassword" class="form-label">Password</label>
-                            <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control" TextMode="Password" Placeholder="Password" required></asp:TextBox>
-                            <div class="invalid-feedback">Please enter your password.</div>
-                        </div>
-                        <asp:Button ID="btnLoginUser" runat="server" CssClass="btn btn-primary" Text="Login" OnClick="btnLoginUser_Click" />
-                        <div class="forgot-password">
-                            <a href="ForgotPassword.aspx">Forgot Password?</a> <!-- Updated link to a dedicated page -->
-                        </div>
-                    </div>
-                </div>
-                <asp:Label ID="lblMessage" runat="server" CssClass="message" Visible="false"></asp:Label>
-            </main>
+    <div class="container">
+        <h1>Access to this site has been restricted.</h1>
+        <p>
+            If you believe this is an error,
+            please contact <a href="https://support.github.com">Support</a>.
+        </p>
+        <div id="status-links">
+            <a href="https://githubstatus.com">GitHub Status</a>
+            <a href="https://twitter.com/githubstatus">@githubstatus</a>
         </div>
-    </form>
-
-    <!-- Added JavaScript for form validation -->
-    <script>
-        (function () {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
-    </script>
+    </div>
+    <!-- Removed empty elements and simplified structure -->
 </body>
 </html>
