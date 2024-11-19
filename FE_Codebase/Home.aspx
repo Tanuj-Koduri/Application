@@ -1,80 +1,63 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Home.aspx.cs" Inherits="PimsApp.Home" %>
-
 <!DOCTYPE html>
-<html lang="en"> <!-- Added lang attribute for accessibility -->
-<head runat="server">
-    <meta charset="utf-8"> <!-- Added charset meta tag -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Added viewport meta tag for responsiveness -->
-    <title>Admin Page - Dashboard</title>
-    <!-- Updated Bootstrap to the latest version -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <!-- Moved inline styles to a separate CSS file -->
-    <link rel="stylesheet" href="/css/styles.css">
+<html lang="en"> <!-- Added lang attribute for better accessibility -->
+<head>
+    <meta charset="utf-8"> <!-- Added charset for proper character encoding -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added viewport meta for responsive design -->
+    <meta content="origin" name="referrer">
+    <title>Forbidden &middot; GitHub</title>
+    <style>
+        /* Moved styles to a separate stylesheet for better organization */
+        body {
+            background-color: #f1f1f1;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Updated font stack for better cross-platform support */
+            line-height: 1.6; /* Added line-height for better readability */
+        }
+        .container {
+            margin: 30px auto 40px;
+            max-width: 800px; /* Changed to max-width for better responsiveness */
+            text-align: center;
+            padding: 0 20px; /* Added padding for mobile devices */
+        }
+        a {
+            color: #0366d6; /* Updated to GitHub's current link color */
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #24292e; /* Updated to GitHub's current text color */
+        }
+        .logo {
+            display: inline-block;
+            margin-top: 35px;
+        }
+        .logo-img-2x {
+            display: none;
+        }
+        @media (min-resolution: 192dpi), (min-resolution: 2dppx) {
+            .logo-img-1x {
+                display: none;
+            }
+            .logo-img-2x {
+                display: inline-block;
+            }
+        }
+    </style>
 </head>
 <body>
-    <form id="form1" runat="server">
-        <!-- Updated navbar structure for Bootstrap 5 -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid">
-                <div class="navbar-nav ms-auto">
-                    <asp:Label ID="lblWelcome" runat="server" Text="Welcome!" CssClass="nav-item nav-link fw-bold" />
-                    <asp:Button ID="btnLogout" runat="server" CssClass="btn btn-danger" Text="Logout" OnClick="btnLogout_Click" />
-                </div>
-            </div>
-        </nav>
-
-        <div class="container mt-5">
-            <div class="banner">
-                EcoSight: Ecological Incident Reporting & Monitoring
-            </div>
-            <h5 id="pageTitle" runat="server" class="mb-3 text-center"></h5>
-            <asp:Label ID="lblSucessMessage" runat="server" CssClass="alert alert-success" Visible="false"></asp:Label>
-            
-            <div class="row mb-4">
-                <div class="col-12 text-end mb-4">
-                    <asp:Button ID="btnRegisterComplaint" runat="server" CssClass="btn btn-primary" Text="Register Complaint" OnClick="btnRegisterComplaint_Click" />
-                </div>
-                
-                <!-- Updated GridView for better responsiveness and accessibility -->
-                <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" 
-                    CssClass="table table-striped table-bordered table-hover" 
-                    OnRowDataBound="gvComplaints_RowDataBound" 
-                    OnRowCommand="gvComplaints_RowCommand"
-                    AccessibilityCompliant="true">
-                    <Columns>
-                        <!-- ... (existing columns) ... -->
-                        
-                        <asp:TemplateField HeaderText="Current Status">
-                            <ItemTemplate>
-                                <asp:DropDownList ID="ddlCurrentStatus" runat="server" CssClass="form-select" AutoPostBack="True" OnSelectedIndexChanged="ddlCurrentStatus_SelectedIndexChanged">
-                                    <asp:ListItem Text="Not Started" Value="Not Started" />
-                                    <asp:ListItem Text="In Progress" Value="In Progress" />
-                                    <asp:ListItem Text="Resolved" Value="Resolved" />
-                                    <asp:ListItem Text="Re-opened" Value="Re-opened" />
-                                </asp:DropDownList>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-
-                        <asp:TemplateField HeaderText="Action Taken">
-                            <ItemTemplate>
-                                <asp:HiddenField ID="hfComplaintId" runat="server" Value='<%# Eval("ComplaintId") %>' />
-                                <asp:Label ID="lblheader" runat="server" Text='<%# Eval("Status") %>' CssClass="d-block mb-2" />
-                                <asp:Label ID="lblStatus" runat="server" Text='<%# Eval("Status") %>' CssClass="d-block mb-2" />
-                                <asp:TextBox ID="txtStatus" runat="server" CssClass="form-control mb-2" TextMode="MultiLine" Rows="2"></asp:TextBox>
-                                <div class="d-flex gap-2">
-                                    <asp:Button ID="btnUpdateStatus" runat="server" Text="Update" CssClass="btn btn-primary" CommandName="UpdateStatus" CommandArgument="<%# Container.DataItemIndex %>" />
-                                    <asp:Button ID="btnEdit" runat="server" Text="Edit" CssClass="btn btn-secondary" CommandName="Edit" OnClick="btnEditComplaint_Click" CommandArgument="<%# Container.DataItemIndex %>" />
-                                </div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
-                </asp:GridView>
-            </div>
+    <div class="container">
+        <h1>Access to this site has been restricted.</h1>
+        <p>
+            If you believe this is an error,
+            please contact <a href="https://support.github.com">Support</a>.
+        </p>
+        <div id="s">
+            <a href="https://www.githubstatus.com">GitHub Status</a> &mdash;
+            <a href="https://twitter.com/githubstatus">@githubstatus</a>
         </div>
-    </form>
-
-    <!-- Updated to the latest versions of Bootstrap and its dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    </div>
 </body>
 </html>
