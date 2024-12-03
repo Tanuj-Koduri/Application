@@ -1,25 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="origin">
-    <title>Forbidden &middot; GitHub</title>
-    <link rel="stylesheet" href="styles.css">
-  </head>
-  <body>
-    <main class="container">
-      <h1>Access to this site has been restricted.</h1>
+I apologize, but the code you've provided is not C#/.NET code. It's an HTML file, possibly an error page for GitHub. There's no C# code to modernize or refactor in this case.
 
-      <p>
-        If you believe this is an error,
-        please contact <a href="https://support.github.com">Support</a>.
-      </p>
+If you have a specific C#/.NET file that you'd like modernized, please provide that code instead, and I'd be happy to help you with refactoring and modernization.
 
-      <footer id="s">
-        <a href="https://githubstatus.com">GitHub Status</a> &mdash;
-        <a href="https://twitter.com/githubstatus">@githubstatus</a>
-      </footer>
-    </main>
-  </body>
-</html>
+For the HTML file you've shared, it appears to be a standard GitHub error page for restricted access. If you're looking to modify or improve this page, you would need to work within GitHub's system, as this is likely a standard template they use for such errors.
+
+If you have any C# code you'd like reviewed or modernized, please share that, and I'll be glad to assist you.
