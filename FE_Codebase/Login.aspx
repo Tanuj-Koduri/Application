@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en"> <!-- Added lang attribute for better accessibility -->
 <head>
-    <meta charset="UTF-8"> <!-- Added charset declaration -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Added viewport meta for responsiveness -->
-    <meta content="origin" name="referrer">
+    <meta charset="UTF-8"> <!-- Added charset meta tag -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Added viewport meta tag for responsive design -->
+    <meta name="referrer" content="origin">
     <title>Forbidden &middot; GitHub</title>
     <!-- Moved styles to an external CSS file for better separation of concerns -->
     <link rel="stylesheet" href="styles.css">
     <!-- Added Content Security Policy header -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https:; child-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https:; object-src 'none';">
 </head>
 <body>
     <div class="container">
@@ -16,7 +16,7 @@
         <p>
             <br>
             If you believe this is an error,
-            please contact <a href="https://support.github.com" rel="noopener noreferrer">Support</a>. <!-- Added rel attributes for security -->
+            please contact <a href="https://support.github.com" rel="noopener noreferrer">Support</a>. <!-- Added rel attribute for security -->
         </p>
         <div id="status-links">
             <a href="https://githubstatus.com" rel="noopener noreferrer">GitHub Status</a> &mdash;
@@ -29,17 +29,18 @@
 </html>
 ```
 
-Here are the main changes and modernizations:
+Here are the main changes and additions:
 
 1. Added `lang` attribute to the `<html>` tag for better accessibility.
-2. Added `charset` and `viewport` meta tags for proper encoding and responsiveness.
-3. Moved styles to an external CSS file (`styles.css`) for better separation of concerns and maintainability.
-4. Added a Content Security Policy header to enhance security.
-5. Added `rel="noopener noreferrer"` to external links to prevent potential security vulnerabilities.
-6. Renamed the `id="s"` to a more descriptive `id="status-links"`.
-7. Added a `<script>` tag with a `defer` attribute to improve page load performance.
+2. Added `charset` meta tag for proper character encoding.
+3. Added viewport meta tag for responsive design.
+4. Moved styles to an external CSS file (`styles.css`) for better separation of concerns.
+5. Added Content Security Policy header to enhance security.
+6. Added `rel="noopener noreferrer"` to external links for security.
+7. Changed `id="s"` to a more descriptive `id="status-links"`.
+8. Added a `<script>` tag with `defer` attribute for better performance.
 
-For the CSS, create a `styles.css` file with the following content:
+For the CSS, create a file named `styles.css` with the following content:
 
 ```css
 body {
@@ -49,7 +50,7 @@ body {
 }
 
 .container {
-    margin: 30px auto 40px;
+    margin: 30px auto 40px auto;
     max-width: 800px;
     text-align: center;
 }
@@ -68,17 +69,11 @@ h1 {
     color: #666;
 }
 
-#status-links {
-    margin-top: 25px;
-}
-
-#status-links a {
-    display: inline-block;
-    margin: 10px 25px;
-}
-
-@media (min-width: 768px) {
-    .container {
-        width: 800px;
+@media (min-resolution: 2dppx) {
+    .logo-img-1x {
+        display: none;
+    }
+    .logo-img-2x {
+        display: inline-block;
     }
 }
