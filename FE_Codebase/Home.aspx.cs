@@ -1,7 +1,133 @@
-I apologize, but the code you've provided is not C#/.NET code. It's an HTML file, possibly an error page for GitHub. There's no C# code to modernize or refactor in this case.
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Text;
+using System.Web.Security;
+using Microsoft.Extensions.Configuration; // Added for modern configuration management
 
-If you have a specific C#/.NET file that you'd like modernized, please provide that code instead, and I'd be happy to help you with refactoring and modernization.
+namespace PimsApp
+{
+    public partial class Home : Page
+    {
+        private readonly IConfiguration _configuration; // Added for dependency injection
 
-For the HTML file you've shared, it appears to be a standard GitHub error page for restricted access. If you're looking to modify or improve this page, you would need to work within GitHub's system, as this is likely a standard template they use for such errors.
+        // Constructor injection for configuration
+        public Home(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
-If you have any C# code you'd like reviewed or modernized, please share that, and I'll be glad to assist you.
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                var roles = Session["Roles"] as List<string>;
+
+                if (roles?.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)) == true)
+                {
+                    SetupPageBasedOnRole(roles);
+                    BindComplaints();
+                    DisplaySuccessMessage();
+                }
+                else
+                {
+                    Response.Redirect("Login.aspx");
+                }
+            }
+        }
+
+        private void SetupPageBasedOnRole(List<string> roles)
+        {
+            bool isAdmin = roles.Contains("Admin");
+            bool isBoth = roles.Contains("BothRoles");
+
+            // Use null-conditional operator and null coalescing operator
+            var actionTakenField = gvComplaints.Columns
+                .OfType<TemplateField>()
+                .FirstOrDefault(f => f.HeaderText == "Action Taken");
+
+            if (actionTakenField != null)
+            {
+                actionTakenField.HeaderText = (isAdmin || isBoth) ? "UpdateProgress" : "Current Status";
+            }
+
+            pageTitle.InnerText = (isAdmin || isBoth) ? "Admin Dashboard - Complaints Management" : "My Complaints";
+            gvComplaints.Columns[9].Visible = isAdmin || isBoth;
+
+            var email = Session["Email"] as string;
+            lblWelcome.Text = $"Welcome, {email}!";
+        }
+
+        private void DisplaySuccessMessage()
+        {
+            if (Session["SuccessMessage"] is string successMessage)
+            {
+                lblSucessMessage.Text = successMessage;
+                lblSucessMessage.Visible = true;
+                Session["SuccessMessage"] = null;
+            }
+        }
+
+        private void BindComplaints()
+        {
+            var connectionString = _configuration.GetConnectionString("YourConnectionString");
+            var roles = Session["Roles"] as List<string>;
+            var email = Session["Email"] as string;
+
+            var query = (roles.Contains("Admin") || roles.Contains("BothRoles"))
+                ? "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints ORDER BY Id DESC"
+                : "SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, Comments, PictureUpload, ComplaintId, CurrentStatus, Status FROM Complaints WHERE Email = @Email ORDER BY Id DESC";
+
+            using (var conn = new SqlConnection(connectionString))
+            using (var cmd = new SqlCommand(query, conn))
+            {
+                if (roles.Contains("NormalUser"))
+                {
+                    cmd.Parameters.AddWithValue("@Email", email);
+                }
+
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    var complaints = new List<ComplaintViewModel>();
+                    while (reader.Read())
+                    {
+                        complaints.Add(new ComplaintViewModel
+                        {
+                            Id = reader["Id"].ToString(),
+                            ComplaintId = reader["ComplaintId"].ToString(),
+                            Name = reader["Name"].ToString(),
+                            EmpId = reader["EmpId"].ToString(),
+                            Email = reader["Email"].ToString(),
+                            ContactNumber = reader["ContactNumber"].ToString(),
+                            DateTimeCapture = Convert.ToDateTime(reader["DateTimeCapture"]),
+                            PictureCaptureLocation = reader["PictureCaptureLocation"].ToString(),
+                            Comments = reader["Comments"].ToString(),
+                            Status = reader["Status"].ToString(),
+                            PictureUploads = reader["PictureUpload"].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(System.IO.Path.GetFileName).ToArray(),
+                            CurrentStatus = reader["CurrentStatus"].ToString(),
+                        });
+                    }
+
+                    gvComplaints.DataSource = complaints;
+                    gvComplaints.DataBind();
+                }
+            }
+        }
+
+        // Rest of the code...
+
+        protected void btnLogout_Click(object sender, EventArgs e)
+        {
+            Session.Abandon();
+            FormsAuthentication.SignOut();
+            Response.Redirect("Login.aspx");
+        }
+
+        protected string GetUserRoleClass() => User.IsInRole("Admin") || User.IsInRole("BothRoles") ? "admin" : string.Empty;
+    }
+}
