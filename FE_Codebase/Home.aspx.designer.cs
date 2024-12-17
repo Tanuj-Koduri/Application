@@ -1,41 +1,24 @@
-<!DOCTYPE html>
-```
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
 
-2. Add a language attribute to the html tag:
-```html
-<html lang="en">
-```
+namespace PimsApp
+{
+    public partial class Home
+    {
+        // Use 'public' instead of 'protected' for better encapsulation
+        // Use 'required' keyword to ensure non-null values
+        public required HtmlForm Form1 { get; set; } // Modernized: Renamed to follow C# naming conventions
 
-3. Add a viewport meta tag for better responsive design:
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-```
+        public required Label LblWelcome { get; set; } // Modernized: Renamed to follow C# naming conventions
 
-4. Use more semantic HTML5 elements:
-```html
-<header>
-  <h1>Access to this site has been restricted.</h1>
-</header>
-<main>
-  <p>
-    <br>
-    If you believe this is an error,
-    please contact <a href="https://support.github.com">Support</a>.
-  </p>
-</main>
-<footer>
-  <div id="s">
-    <a href="https://githubstatus.com">GitHub Status</a> &mdash;
-    <a href="https://twitter.com/githubstatus">@githubstatus</a>
-  </div>
-</footer>
-```
+        public required Button BtnLogout { get; set; } // Modernized: Renamed to follow C# naming conventions
 
-5. Consider moving the CSS to a separate file for better maintainability.
+        public required HtmlGenericControl PageTitle { get; set; } // Modernized: Renamed to follow C# naming conventions
 
-6. Update the media query to use more modern syntax:
-```css
-@media (min-resolution: 192dpi), (min-resolution: 2dppx) {
-  .logo-img-1x { display: none; }
-  .logo-img-2x { display: inline-block; }
+        public required Label LblSuccessMessage { get; set; } // Modernized: Renamed and fixed typo in 'Success'
+
+        public required Button BtnRegisterComplaint { get; set; } // Modernized: Renamed to follow C# naming conventions
+
+        public required GridView GvComplaints { get; set; } // Modernized: Renamed to follow C# naming conventions
+    }
 }
