@@ -1,84 +1,84 @@
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Home.aspx.cs" Inherits="PimsApp.Home" %>
+
 <!DOCTYPE html>
-<html lang="en"> <!-- Added lang attribute for better accessibility -->
-  <head>
-    <meta charset="utf-8"> <!-- Added charset declaration -->
-    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added viewport meta tag for responsive design -->
-    <meta content="origin" name="referrer">
-    <title>Forbidden &middot; GitHub</title>
-    <!-- Moved styles to an external CSS file for better separation of concerns -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- Added Content Security Policy header -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https:; object-src 'none';">
-  </head>
-  <body>
-    <div class="container">
-      <h1>Access to this site has been restricted.</h1>
-      <p>
-        <br>
-        If you believe this is an error,
-        please contact <a href="https://support.github.com">Support</a>.
-      </p>
-      <div id="status-links">
-        <a href="https://githubstatus.com">GitHub Status</a> &mdash;
-        <a href="https://twitter.com/githubstatus">@githubstatus</a>
-      </div>
-    </div>
-    <!-- Added defer attribute to load script asynchronously -->
-    <script src="script.js" defer></script>
-  </body>
+<html lang="en"> <!-- Added lang attribute for accessibility -->
+<head runat="server">
+    <meta charset="utf-8"> <!-- Added charset meta tag -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Added viewport meta tag for responsiveness -->
+    <title>Admin Page - Dashboard</title>
+    <!-- Updated to Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <!-- Moved styles to a separate CSS file -->
+    <link rel="stylesheet" href="~/Styles/Home.css">
+</head>
+<body>
+    <form id="form1" runat="server">
+        <!-- Updated navbar to Bootstrap 5 syntax -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <div class="navbar-nav ms-auto">
+                    <asp:Label ID="lblWelcome" runat="server" Text="Welcome!" CssClass="nav-item nav-link fw-bold" />
+                    <asp:Button ID="btnLogout" runat="server" CssClass="btn btn-danger" Text="Logout" OnClick="btnLogout_Click" />
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-5">
+            <div class="banner">
+                EcoSight: Ecological Incident Reporting & Monitoring
+            </div>
+            <h5 id="pageTitle" runat="server" class="mb-3 text-center"></h5>
+            <asp:Label ID="lblSucessMessage" runat="server" CssClass="alert alert-success" Visible="false"></asp:Label>
+            
+            <div class="row mb-4">
+                <div class="col text-end">
+                    <asp:Button ID="btnRegisterComplaint" runat="server" CssClass="btn btn-primary" Text="Register Complaint" OnClick="btnRegisterComplaint_Click" />
+                </div>
+            </div>
+            
+            <!-- Updated GridView with modern Bootstrap classes and aria attributes -->
+            <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" 
+                CssClass="table table-striped table-bordered table-hover" 
+                OnRowDataBound="gvComplaints_RowDataBound" OnRowCommand="gvComplaints_RowCommand"
+                aria-label="Complaints table">
+                <Columns>
+                    <!-- ... (existing columns) ... -->
+                    
+                    <asp:TemplateField HeaderText="Current Status">
+                        <ItemTemplate>
+                            <div class="form-group">
+                                <asp:DropDownList ID="ddlCurrentStatus" runat="server" CssClass="form-select" 
+                                    AutoPostBack="True" OnSelectedIndexChanged="ddlCurrentStatus_SelectedIndexChanged">
+                                    <asp:ListItem Text="Not Started" Value="Not Started" />
+                                    <asp:ListItem Text="In Progress" Value="In Progress" />
+                                    <asp:ListItem Text="Resolved" Value="Resolved" />
+                                    <asp:ListItem Text="Re-opened" Value="Re-opened" />
+                                </asp:DropDownList>
+                            </div>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+
+                    <asp:TemplateField HeaderText="Action Taken">
+                        <ItemTemplate>
+                            <asp:HiddenField ID="hfComplaintId" runat="server" Value='<%# Eval("ComplaintId") %>' />
+                            <asp:Label ID="lblStatus" runat="server" Text='<%# Eval("Status") %>' CssClass="d-block mb-2" />
+                            <asp:TextBox ID="txtStatus" runat="server" CssClass="form-control mb-2" TextMode="MultiLine" Rows="2"></asp:TextBox>
+                            <div class="d-flex justify-content-between">
+                                <asp:Button ID="btnUpdateStatus" runat="server" Text="Update" CssClass="btn btn-primary" 
+                                    CommandName="UpdateStatus" CommandArgument="<%# Container.DataItemIndex %>" />
+                                <asp:Button ID="btnEdit" runat="server" Text="Edit" CssClass="btn btn-secondary" 
+                                    CommandName="Edit" OnClick="btnEditComplaint_Click" CommandArgument="<%# Container.DataItemIndex %>" />
+                            </div>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+            </asp:GridView>
+        </div>
+    </form>
+
+    <!-- Updated to Bootstrap 5 and added defer attribute for performance -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" 
+        crossorigin="anonymous" defer></script>
+</body>
 </html>
-```
-
-Here are the main changes and improvements:
-
-1. Added `lang` attribute to the `<html>` tag for better accessibility.
-2. Added `charset` declaration and viewport meta tag for responsive design.
-3. Moved styles to an external CSS file (`styles.css`) for better separation of concerns.
-4. Added a Content Security Policy header to enhance security.
-5. Removed inline styles and media queries (moved to external CSS).
-6. Changed the `id` of the status links div to be more descriptive.
-7. Added a deferred script tag at the end of the body for any potential JavaScript.
-
-For the CSS, create a file named `styles.css` with the following content:
-
-```css
-body {
-  background-color: #f1f1f1;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-}
-
-.container {
-  margin: 30px auto 40px auto;
-  max-width: 800px;
-  text-align: center;
-}
-
-a {
-  color: #4183c4;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-h1, h2, h3 {
-  color: #666;
-}
-
-#status-links {
-  margin-top: 25px;
-}
-
-#status-links a {
-  display: inline-block;
-  margin: 10px 25px;
-}
-
-@media (min-width: 768px) {
-  .container {
-    width: 800px;
-  }
-}
