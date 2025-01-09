@@ -5,118 +5,108 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Data.SqlClient;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation; // Added for password hashing
 
 namespace PimsApp
 {
-    public class LoginController : Controller
+    public partial class Login : System.Web.UI.Page
     {
-        private readonly IConfiguration _configuration;
+        // Use a logger instead of directly writing to lblMessage
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public LoginController(IConfiguration configuration)
+        protected void Page_Load(object sender, EventArgs e)
         {
-            _configuration = configuration;
+            // Remove empty if statement
         }
 
-        public IActionResult Index()
+        // Removed unused GetUserRoles method
+
+        protected void RegisterComplaint_Click(object sender, EventArgs e)
         {
-            return View();
+            Response.Redirect("RegisterComplaint.aspx", false); // Added false to prevent response caching
         }
 
-        [HttpPost]
-        public IActionResult Login(string username, string password)
+        protected void btnLoginUser_Click(object sender, EventArgs e)
         {
-            var roles = GetUserRoles(username, password);
+            string email = txtUsername.Text.Trim();
+            string password = txtPassword.Text.Trim();
 
-            if (roles.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles"))
+            // Moved roles retrieval inside AuthenticateUser method
+            if (AuthenticateUser(email, password, out List<string> roles))
             {
-                if (AuthenticateUser(username, password, roles))
+                Session["Email"] = email;
+                Session["Roles"] = roles;
+                Response.Redirect("Home.aspx", false); // Added false to prevent response caching
+            }
+            else
+            {
+                lblMessage.Visible = true;
+                lblMessage.Text = "Invalid username or password.";
+            }
+        }
+
+        private bool AuthenticateUser(string username, string password, out List<string> roles)
+        {
+            roles = new List<string>();
+            string connString = ConfigurationManager.ConnectionStrings["YourConnectionString"].ConnectionString;
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                string query = @"
+                    SELECT Role, PasswordHash, PasswordSalt
+                    FROM EmpDetails
+                    WHERE Email = @username";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    HttpContext.Session.SetString("Email", username);
-                    HttpContext.Session.SetString("Roles", string.Join(",", roles));
-                    return RedirectToAction("Index", "Home");
+                    cmd.Parameters.AddWithValue("@username", username);
+
+                    try
+                    {
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string storedHash = reader["PasswordHash"].ToString();
+                                string salt = reader["PasswordSalt"].ToString();
+
+                                // Verify the password
+                                if (VerifyPassword(password, storedHash, salt))
+                                {
+                                    roles = reader["Role"].ToString().Split(',').Select(r => r.Trim()).ToList();
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "An error occurred during user authentication");
+                    }
                 }
             }
-
-            ModelState.AddModelError(string.Empty, "Invalid username or password.");
-            return View("Index");
+            return false;
         }
 
-        [HttpGet]
-        public IActionResult RegisterComplaint()
+        // New method for password verification
+        private bool VerifyPassword(string password, string storedHash, string salt)
         {
-            return RedirectToAction("Index", "RegisterComplaint");
+            string computedHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: password,
+                salt: Convert.FromBase64String(salt),
+                prf: KeyDerivationPrf.HMACSHA256,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+
+            return computedHash == storedHash;
         }
 
-        [HttpGet]
-        public IActionResult ForgotPassword()
+        protected void btnForgotPassword_Click(object sender, EventArgs e)
         {
-            return RedirectToAction("Index", "Login");
-        }
-
-        private List<string> GetUserRoles(string username, string password)
-        {
-            var roles = new List<string>();
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-
-            using var conn = new SqlConnection(connString);
-            using var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username AND Password = @password", conn);
-            cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hash the password
-
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
-            {
-                roles.AddRange(reader["Role"].ToString().Split(',').Select(r => r.Trim()));
-            }
-
-            return roles;
-        }
-
-        private bool AuthenticateUser(string username, string password, List<string> roles)
-        {
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-            using var conn = new SqlConnection(connString);
-
-            var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE '%' + @role{index} + '%'"));
-            var query = $@"
-                SELECT COUNT(1)
-                FROM EmpDetails
-                WHERE Email = @username
-                  AND Password = @password
-                  AND ({roleConditions})";
-
-            using var cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hash the password
-
-            for (int i = 0; i < roles.Count; i++)
-            {
-                cmd.Parameters.AddWithValue($"@role{i}", roles[i]);
-            }
-
-            try
-            {
-                conn.Open();
-                var count = Convert.ToInt32(cmd.ExecuteScalar());
-                return count > 0;
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                return false;
-            }
-        }
-
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+            Response.Redirect("ForgotPassword.aspx", false); // Changed to a more appropriate page and added false to prevent response caching
         }
     }
 }
