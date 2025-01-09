@@ -1,43 +1,46 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace PimsApp
 {
-    // Updated to use ASP.NET Core
+    // Modernized: Using ASP.NET Core attributes for routing
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("[controller]")]
     public class ImageHandlerController : ControllerBase
     {
         private readonly IConfiguration _configuration;
 
-        // Dependency injection for configuration
+        // Modernized: Using dependency injection for configuration
         public ImageHandlerController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
-        // Async method for better performance
+        // Modernized: Using async/await for better performance
         [HttpGet]
-        public async Task<IActionResult> GetImage(string imageName)
+        public async Task<IActionResult> GetImage([FromQuery] string imageName)
         {
-            // Use Path.Combine for cross-platform compatibility
+            if (string.IsNullOrEmpty(imageName))
+            {
+                return BadRequest("Image name is required.");
+            }
+
+            // Modernized: Using configuration to get base path
             string basePath = _configuration["ImagePath"];
             string filePath = Path.Combine(basePath, imageName);
 
-            // Use FileInfo for better performance and security
-            var fileInfo = new FileInfo(filePath);
-
-            if (!fileInfo.Exists)
+            // Modernized: Using Path.Combine for cross-platform compatibility
+            if (!System.IO.File.Exists(filePath))
             {
                 return NotFound("Image not found");
             }
 
-            // Validate file extension
-            string extension = fileInfo.Extension.ToLowerInvariant();
+            // Modernized: Using Path.GetExtension for safer extension extraction
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
             string contentType = GetContentType(extension);
 
             if (contentType == null)
@@ -45,29 +48,23 @@ namespace PimsApp
                 return StatusCode(415, "Unsupported image type");
             }
 
-            // Use FileStreamResult for efficient file streaming
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
-            return new FileStreamResult(stream, contentType);
+            // Modernized: Using FileStreamResult for more efficient file serving
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return new FileStreamResult(fileStream, contentType);
         }
 
-        // Use a dictionary for better performance
-        private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>
+        // Modernized: Using a more concise switch expression
+        private static string GetContentType(string extension) => extension switch
         {
-            [".jpg"] = "image/jpeg",
-            [".jpeg"] = "image/jpeg",
-            [".png"] = "image/png",
-            [".gif"] = "image/gif",
-            [".bmp"] = "image/bmp",
-            [".tiff"] = "image/tiff",
-            [".tif"] = "image/tiff",
-            [".ico"] = "image/x-icon",
-            [".svg"] = "image/svg+xml",
-            [".jfif"] = "image/jfif"
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".tiff" or ".tif" => "image/tiff",
+            ".ico" => "image/x-icon",
+            ".svg" => "image/svg+xml",
+            ".jfif" => "image/jfif",
+            _ => null
         };
-
-        private string GetContentType(string extension)
-        {
-            return ContentTypes.TryGetValue(extension, out string contentType) ? contentType : null;
-        }
     }
 }
