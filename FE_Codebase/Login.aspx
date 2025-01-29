@@ -4,40 +4,41 @@
 <html lang="en"> <!-- Added lang attribute for accessibility -->
 <head runat="server">
     <meta charset="utf-8"> <!-- Added charset meta tag -->
-    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added viewport meta tag for responsive design -->
-    <title>Home Page - EcoSight</title> <!-- Updated title to match the application name -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Added viewport meta tag for responsiveness -->
+    <title>Login - EcoSight</title> <!-- Updated title for better SEO -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"> <!-- Updated Font Awesome version -->
 
-    <style>
-        /* CSS styles remain largely unchanged, but consider moving to an external CSS file for better separation of concerns */
-    </style>
+    <!-- Moved styles to an external CSS file for better separation of concerns -->
+    <link href="/css/login.css" rel="stylesheet">
 </head>
 <body>
-    <form id="form1" runat="server">
+    <form id="loginForm" runat="server" class="needs-validation" novalidate> <!-- Added form validation class -->
         <div class="container">
             <div class="menu-bar">
-                <label>Welcome to EcoSight: Ecological Incident Reporting & Monitoring</label>
+                <h1 class="h4">Welcome to EcoSight: Ecological Incident Reporting & Monitoring</h1> <!-- Changed to semantic heading -->
             </div>
 
             <div class="content">
-                <h1 class="display-4">Citizen Repair: Report Public Issues Here</h1> <!-- Changed h3 to h1 for better SEO -->
+                <h2 class="display-4">Citizen Repair: Report Public Issues Here</h2> <!-- Changed to h2 for better hierarchy -->
                 <div class="card-container">
                     <div class="form-icon"><i class="fas fa-user"></i></div>
-                    <h2 class="title">Login</h2> <!-- Changed h3 to h2 for better hierarchy -->
+                    <h3 class="title">Login</h3>
 
                     <div class="form-horizontal">
                         <div class="form-group">
-                            <label for="txtUsername">Username</label>
-                            <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" placeholder="Username" required></asp:TextBox> <!-- Added required attribute -->
+                            <label for="txtUsername" class="form-label">Username</label>
+                            <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" Placeholder="Username" required></asp:TextBox>
+                            <div class="invalid-feedback">Please enter your username.</div> <!-- Added validation feedback -->
                         </div>
                         <div class="form-group">
-                            <label for="txtPassword">Password</label>
-                            <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control" TextMode="Password" placeholder="Password" required></asp:TextBox> <!-- Added required attribute -->
+                            <label for="txtPassword" class="form-label">Password</label>
+                            <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control" TextMode="Password" Placeholder="Password" required></asp:TextBox>
+                            <div class="invalid-feedback">Please enter your password.</div> <!-- Added validation feedback -->
                         </div>
-                        <asp:Button ID="btnLoginUser" runat="server" CssClass="btn" Text="Login" OnClick="btnLoginUser_Click" />
+                        <asp:Button ID="btnLoginUser" runat="server" CssClass="btn btn-primary" Text="Login" OnClick="btnLoginUser_Click" />
                         <div class="forgot-password">
-                            <asp:HyperLink ID="hlForgotPassword" runat="server" NavigateUrl="~/ForgotPassword.aspx">Forgot Password?</asp:HyperLink> <!-- Updated to use ASP.NET HyperLink control -->
+                            <a href="ForgotPassword.aspx">Forgot Password?</a> <!-- Updated link to a separate page -->
                         </div>
                     </div>
                 </div>
@@ -46,7 +47,8 @@
         </div>
     </form>
 
-    <!-- Added JavaScript files at the end of the body for better performance -->
+    <!-- Added JavaScript for form validation -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="/js/form-validation.js"></script>
 </body>
 </html>
