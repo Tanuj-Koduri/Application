@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Web.UI;
-using Microsoft.Extensions.Configuration; // Updated for modern configuration management
-using System.Security.Cryptography; // Added for secure password hashing
+using System.Security.Cryptography;
 using System.Text;
+using System.Web.UI;
+using Microsoft.Extensions.Configuration; // Updated configuration library
 
 namespace PimsApp
 {
@@ -13,7 +13,6 @@ namespace PimsApp
     {
         private readonly IConfiguration _configuration; // Dependency injection for configuration
 
-        // Constructor for dependency injection
         public Login(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -27,18 +26,21 @@ namespace PimsApp
         private List<string> GetUserRoles(string email)
         {
             var roles = new List<string>();
-            var connString = _configuration.GetConnectionString("YourConnectionString"); // Using IConfiguration
-            using var conn = new SqlConnection(connString);
-            using var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username", conn);
-            cmd.Parameters.AddWithValue("@username", email);
-            
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            string connString = _configuration.GetConnectionString("YourConnectionString"); // Using IConfiguration
+
+            using (var conn = new SqlConnection(connString))
+            using (var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username", conn))
             {
-                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)); // Using more efficient string splitting
+                cmd.Parameters.AddWithValue("@username", email);
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)); // Using more efficient string splitting
+                    }
+                }
             }
-            
             return roles;
         }
 
@@ -54,7 +56,7 @@ namespace PimsApp
 
             List<string> roles = GetUserRoles(email);
 
-            if (roles.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles")) // Using LINQ for cleaner role check
+            if (roles.Any(r => r is "Admin" or "NormalUser" or "BothRoles")) // Using pattern matching
             {
                 if (AuthenticateUser(email, password, roles))
                 {
@@ -64,18 +66,18 @@ namespace PimsApp
                 }
                 else
                 {
-                    ShowErrorMessage("Invalid username or password.");
+                    DisplayErrorMessage("Invalid username or password.");
                 }
             }
             else
             {
-                ShowErrorMessage("Invalid username or password.");
+                DisplayErrorMessage("Invalid username or password.");
             }
         }
 
         private bool AuthenticateUser(string username, string password, List<string> roles)
         {
-            var connString = _configuration.GetConnectionString("YourConnectionString");
+            string connString = _configuration.GetConnectionString("YourConnectionString");
             using var conn = new SqlConnection(connString);
             
             string roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
@@ -104,48 +106,27 @@ namespace PimsApp
             catch (Exception ex)
             {
                 // Log the exception
-                ShowErrorMessage($"An error occurred: {ex.Message}");
+                DisplayErrorMessage($"An error occurred: {ex.Message}");
                 return false;
             }
         }
 
-        private List<string> GetUserRoles(string username, string password)
-        {
-            var roles = new List<string>();
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-            using var conn = new SqlConnection(connString);
-            using var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username AND Password = @password", conn);
-            cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hashing the password
-            
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
-            {
-                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(r => r.Trim()));
-            }
-            
-            return roles;
-        }
-
-        protected void btnForgotPassword_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("ForgotPassword.aspx", false); // Changed to a more appropriate page
-        }
-
-        // Helper method to show error messages
-        private void ShowErrorMessage(string message)
-        {
-            lblMessage.Visible = true;
-            lblMessage.Text = message;
-        }
-
-        // Helper method to hash passwords
         private string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
             byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
             return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+        }
+
+        private void DisplayErrorMessage(string message)
+        {
+            lblMessage.Visible = true;
+            lblMessage.Text = message;
+        }
+
+        protected void btnForgotPassword_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("ForgotPassword.aspx", false); // Changed to a more appropriate page
         }
     }
 }
