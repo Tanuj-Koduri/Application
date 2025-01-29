@@ -1,19 +1,19 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
-namespace PimsApp.Controllers
+namespace PimsApp
 {
     [ApiController]
     [Route("[controller]")]
-    public class ImageController : ControllerBase
+    public class ImageHandlerController : ControllerBase
     {
         private readonly IConfiguration _configuration;
 
-        public ImageController(IConfiguration configuration)
+        public ImageHandlerController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
@@ -23,49 +23,24 @@ namespace PimsApp.Controllers
         {
             // Use IConfiguration instead of ConfigurationManager
             string basePath = _configuration["ImagePath"];
-            
-            // Use Path.Combine for cross-platform compatibility
             string filePath = Path.Combine(basePath, imageName);
 
-            // Validate file path to prevent directory traversal attacks
-            if (!filePath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest("Invalid image name");
-            }
-
+            // Use Path.Combine for better cross-platform support
             if (!System.IO.File.Exists(filePath))
             {
                 return NotFound("Image not found");
             }
 
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            string contentType = GetContentType(extension);
-
-            if (contentType == null)
+            // Use FileExtensionContentTypeProvider for more robust content type detection
+            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out string contentType))
             {
                 return StatusCode(415, "Unsupported image type");
             }
 
-            // Use FileStreamResult for better performance
+            // Use FileStreamResult for better performance with large files
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
             return new FileStreamResult(fileStream, contentType);
-        }
-
-        private static string GetContentType(string extension)
-        {
-            // Use switch expression for more concise code
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
-                ".bmp" => "image/bmp",
-                ".tiff" or ".tif" => "image/tiff",
-                ".ico" => "image/x-icon",
-                ".svg" => "image/svg+xml",
-                ".jfif" => "image/jfif",
-                _ => null
-            };
         }
     }
 }
