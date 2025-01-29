@@ -7,29 +7,29 @@ using System.Threading.Tasks;
 
 namespace PimsApp
 {
-    // Updated to use ASP.NET Core
+    // Converted to ASP.NET Core API controller
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class ImageHandlerController : ControllerBase
     {
         private readonly IConfiguration _configuration;
 
-        // Dependency injection for configuration
+        // Dependency injection for IConfiguration
         public ImageHandlerController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
-        // Async method for better performance
+        // Converted to async method
         [HttpGet]
-        public async Task<IActionResult> Get(string imageName)
+        public async Task<IActionResult> GetImage(string imageName)
         {
             if (string.IsNullOrEmpty(imageName))
             {
-                return BadRequest("Image name is required");
+                return BadRequest("Image name is required.");
             }
 
-            // Use configuration to get base path
+            // Use IConfiguration to get the base path
             string basePath = _configuration["ImagePath"];
             string filePath = Path.Combine(basePath, imageName);
 
@@ -38,18 +38,13 @@ namespace PimsApp
                 return NotFound("Image not found");
             }
 
-            // Sanitize file path to prevent directory traversal attacks
-            if (!filePath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest("Invalid image path");
-            }
-
+            // Get file extension and content type
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
             string contentType = GetContentType(extension);
 
             if (contentType == null)
             {
-                return StatusCode(415, "Unsupported image type");
+                return StatusCode(StatusCodes.Status415UnsupportedMediaType, "Unsupported image type");
             }
 
             // Use FileStreamResult for better performance
@@ -57,21 +52,22 @@ namespace PimsApp
             return new FileStreamResult(fileStream, contentType);
         }
 
-        // Using a dictionary for better performance
+        // Updated content type dictionary
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>
         {
-            [".jpg"] = "image/jpeg",
-            [".jpeg"] = "image/jpeg",
-            [".png"] = "image/png",
-            [".gif"] = "image/gif",
-            [".bmp"] = "image/bmp",
-            [".tiff"] = "image/tiff",
-            [".tif"] = "image/tiff",
-            [".ico"] = "image/x-icon",
-            [".svg"] = "image/svg+xml",
-            [".jfif"] = "image/jfif"
+            {".jpg", "image/jpeg"},
+            {".jpeg", "image/jpeg"},
+            {".png", "image/png"},
+            {".gif", "image/gif"},
+            {".bmp", "image/bmp"},
+            {".tiff", "image/tiff"},
+            {".tif", "image/tiff"},
+            {".ico", "image/x-icon"},
+            {".svg", "image/svg+xml"},
+            {".jfif", "image/jfif"}
         };
 
+        // Simplified GetContentType method
         private static string GetContentType(string extension)
         {
             return ContentTypes.TryGetValue(extension, out string contentType) ? contentType : null;
