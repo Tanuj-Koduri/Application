@@ -1,30 +1,53 @@
-using System.Web.UI.HtmlControls;
-using System.Web.UI.WebControls;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
-namespace PimsApp
+namespace PimsApp.Controllers
 {
-    public partial class Home
+    [Authorize] // Implement authorization
+    public class HomeController : Controller
     {
-        // Use 'public' instead of 'protected' for better encapsulation
-        // Use 'required' keyword to ensure non-null at runtime
-        public required HtmlForm Form1 { get; set; } // Renamed to follow C# naming conventions
+        private readonly ILogger<HomeController> _logger;
 
-        public required Label LblWelcome { get; set; } // Renamed to follow C# naming conventions
-
-        public required Button BtnLogout { get; set; } // Renamed to follow C# naming conventions
-
-        public required HtmlGenericControl PageTitle { get; set; } // Renamed to follow C# naming conventions
-
-        public required Label LblSuccessMessage { get; set; } // Renamed and fixed typo in 'Success'
-
-        public required Button BtnRegisterComplaint { get; set; } // Renamed to follow C# naming conventions
-
-        public required GridView GvComplaints { get; set; } // Renamed to follow C# naming conventions
-
-        // Consider adding a constructor to initialize these properties if needed
-        public Home()
+        public HomeController(ILogger<HomeController> logger)
         {
-            // Initialize properties here if required
+            _logger = logger;
         }
+
+        public IActionResult Index()
+        {
+            // Log page access
+            _logger.LogInformation("Home page accessed");
+
+            // Pass data to view using a view model
+            var viewModel = new HomeViewModel
+            {
+                WelcomeMessage = "Welcome, " + User.Identity.Name,
+                Complaints = GetComplaints()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RegisterComplaint(ComplaintViewModel complaint)
+        {
+            if (ModelState.IsValid)
+            {
+                // Asynchronously register the complaint
+                await RegisterComplaintAsync(complaint);
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(complaint);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync();
+            return RedirectToAction("Login", "Account");
+        }
+
+        // Other action methods...
     }
 }
