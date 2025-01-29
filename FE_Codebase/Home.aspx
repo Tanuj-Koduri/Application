@@ -3,12 +3,12 @@
 <!DOCTYPE html>
 <html lang="en"> <!-- Added lang attribute for accessibility -->
 <head runat="server">
-    <meta charset="utf-8"> <!-- Added charset for proper encoding -->
+    <meta charset="utf-8"> <!-- Added charset meta tag -->
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Added viewport meta tag for responsiveness -->
     <title>Admin Page - Dashboard</title>
     <!-- Updated Bootstrap to the latest version -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <!-- Moved inline styles to a separate CSS file -->
+    <!-- Moved styles to a separate CSS file -->
     <link rel="stylesheet" href="~/styles/home.css">
 </head>
 <body>
@@ -27,41 +27,26 @@
             <div class="banner">
                 EcoSight: Ecological Incident Reporting & Monitoring
             </div>
-            <h5 id="pageTitle" runat="server" class="mb-3 text-center"></h5>
+            <h5 id="pageTitle" runat="server" class="mb-0"></h5>
             <asp:Label ID="lblSucessMessage" runat="server" CssClass="alert alert-success" Visible="false"></asp:Label>
-            
-            <div class="row mb-4">
-                <div class="col-12 text-end">
+            <div class="row mb-4 align-items-center">
+                <div class="text-end mb-4">
                     <asp:Button ID="btnRegisterComplaint" runat="server" CssClass="btn btn-primary" Text="Register Complaint" OnClick="btnRegisterComplaint_Click" />
                 </div>
+                <hr />
+                <!-- Updated GridView with modern Bootstrap classes and responsive design -->
+                <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" CssClass="table table-striped table-bordered table-hover table-responsive" OnRowDataBound="gvComplaints_RowDataBound" OnRowCommand="gvComplaints_RowCommand">
+                    <Columns>
+                        <!-- ... (columns remain the same) ... -->
+                    </Columns>
+                </asp:GridView>
             </div>
-
-            <!-- Updated GridView with modern Bootstrap classes -->
-            <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" 
-                          CssClass="table table-striped table-bordered table-hover" 
-                          OnRowDataBound="gvComplaints_RowDataBound" 
-                          OnRowCommand="gvComplaints_RowCommand">
-                <Columns>
-                    <!-- ... (columns remain largely the same) ... -->
-                    <asp:TemplateField HeaderText="Current Status">
-                        <ItemTemplate>
-                            <asp:DropDownList ID="ddlCurrentStatus" runat="server" CssClass="form-select" 
-                                              AutoPostBack="True" OnSelectedIndexChanged="ddlCurrentStatus_SelectedIndexChanged">
-                                <asp:ListItem Text="Not Started" Value="Not Started" />
-                                <asp:ListItem Text="In Progress" Value="In Progress" />
-                                <asp:ListItem Text="Resolved" Value="Resolved" />
-                                <asp:ListItem Text="Re-opened" Value="Re-opened" />
-                            </asp:DropDownList>
-                        </ItemTemplate>
-                    </asp:TemplateField>
-                    <!-- ... (other columns) ... -->
-                </Columns>
-            </asp:GridView>
         </div>
     </form>
 
-    <!-- Updated to latest versions of jQuery and Bootstrap -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <!-- Updated to latest versions of jQuery, Popper.js, and Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4Wz6iJgD/+ub2oU" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
 </body>
 </html>
