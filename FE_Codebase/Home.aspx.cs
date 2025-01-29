@@ -2,132 +2,125 @@ using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
 using Microsoft.AspNetCore.Identity; // Modern authentication
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using System.Text.Json; // Modern JSON handling
+using Microsoft.AspNetCore.Mvc; // Modern web framework
 
 namespace PimsApp
 {
-    [Authorize] // Modern authorization attribute
-    public partial class Home : System.Web.UI.Page
+    // Modernized to use ASP.NET Core MVC pattern
+    public class HomeController : Controller
     {
         private readonly IConfiguration _configuration;
-        private readonly ILogger<Home> _logger; // Added logging
-        private readonly string _connectionString;
+        private readonly ILogger<HomeController> _logger;
+        private readonly IComplaintService _complaintService; // Added service layer
 
         // Constructor injection for dependencies
-        public Home(IConfiguration configuration, ILogger<Home> logger)
+        public HomeController(
+            IConfiguration configuration,
+            ILogger<HomeController> logger,
+            IComplaintService complaintService)
         {
             _configuration = configuration;
             _logger = logger;
-            _connectionString = _configuration.GetConnectionString("YourConnectionString");
+            _complaintService = complaintService;
         }
 
-        protected async Task Page_LoadAsync(object sender, EventArgs e) // Made async
+        // Async/await pattern for better performance
+        public async Task<IActionResult> Index()
         {
             try
             {
-                var roles = HttpContext.Session.GetObject<List<string>>("Roles"); // Using extension method
+                var roles = HttpContext.Session.GetObject<List<string>>("Roles");
+                var email = HttpContext.Session.GetString("Email");
 
-                if (!IsPostBack)
+                if (!roles?.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)) ?? true)
                 {
-                    if (roles?.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)) ?? false)
-                    {
-                        await ConfigureUIBasedOnRoleAsync(roles);
-                    }
-                    else
-                    {
-                        Response.Redirect("Login.aspx", true);
-                    }
+                    return RedirectToAction("Login", "Account");
                 }
+
+                var viewModel = new HomeViewModel
+                {
+                    IsAdmin = roles.Contains("Admin"),
+                    IsBoth = roles.Contains("BothRoles"),
+                    Email = email,
+                    Complaints = await _complaintService.GetComplaintsAsync(roles, email)
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Page_Load");
-                // Handle error appropriately
+                _logger.LogError(ex, "Error loading home page");
+                return RedirectToAction("Error", "Home");
             }
         }
 
-        private async Task ConfigureUIBasedOnRoleAsync(List<string> roles)
+        // Modernized complaint binding with async/await
+        private async Task<List<ComplaintViewModel>> BindComplaintsAsync(List<string> roles, string email)
         {
-            var isAdmin = roles.Contains("Admin");
-            var isBoth = roles.Contains("BothRoles");
-
-            // Using pattern matching
-            if (gvComplaints.Columns.OfType<TemplateField>()
-                .FirstOrDefault(f => f.HeaderText == "Action Taken") is TemplateField actionTakenField)
-            {
-                actionTakenField.HeaderText = (isAdmin || isBoth) ? "UpdateProgress" : "Current Status";
-            }
-
-            pageTitle.InnerText = (isAdmin || isBoth) 
-                ? "Admin Dashboard - Complaints Management" 
-                : "My Complaints";
-
-            gvComplaints.Columns[9].Visible = (isAdmin || isBoth);
-
-            var email = HttpContext.Session.GetString("Email");
-            lblWelcome.Text = $"Welcome, {email}!";
+            var connectionString = _configuration.GetConnectionString("DefaultConnection");
             
-            await BindComplaintsAsync(); // Made async
-            DisplaySuccessMessage();
+            using var connection = new SqlConnection(connectionString);
+            var query = BuildComplaintQuery(roles);
+            
+            await using var command = new SqlCommand(query, connection);
+            
+            if (!roles.Contains("Admin") && !roles.Contains("BothRoles"))
+            {
+                command.Parameters.AddWithValue("@Email", email);
+            }
+
+            await connection.OpenAsync();
+            
+            using var reader = await command.ExecuteReaderAsync();
+            return await MapComplaintsFromReader(reader);
         }
 
-        private async Task BindComplaintsAsync()
+        // Modernized complaint model
+        public class ComplaintViewModel
         {
-            var roles = HttpContext.Session.GetObject<List<string>>("Roles");
-            var email = HttpContext.Session.GetString("Email");
+            public string Id { get; set; }
+            public string ComplaintId { get; set; }
+            public string Name { get; set; }
+            public string EmpId { get; set; }
+            public string Email { get; set; }
+            public string ContactNumber { get; set; }
+            public DateTime DateTimeCapture { get; set; }
+            public string PictureCaptureLocation { get; set; }
+            public string Comments { get; set; }
+            public IEnumerable<string> PictureUploads { get; set; }
+            public string Status { get; set; }
+            public string CurrentStatus { get; set; }
+        }
 
+        // Added security for status updates
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(string complaintId, string status)
+        {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
-                var query = BuildComplaintsQuery(roles);
-                
-                using var command = new SqlCommand(query, connection);
-                
-                if (roles.Contains("NormalUser"))
+                if (!User.IsInRole("Admin") && !User.IsInRole("BothRoles"))
                 {
-                    command.Parameters.AddWithValue("@Email", email);
+                    return Forbid();
                 }
 
-                await connection.OpenAsync();
-                
-                using var reader = await command.ExecuteReaderAsync();
-                var complaints = await ParseComplaintsFromReaderAsync(reader);
-
-                gvComplaints.DataSource = complaints;
-                await gvComplaints.DataBindAsync();
+                await _complaintService.UpdateStatusAsync(complaintId, status);
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error binding complaints");
-                // Handle error appropriately
+                _logger.LogError(ex, "Error updating complaint status");
+                return BadRequest();
             }
         }
 
-        // New model class using record type
-        public record ComplaintViewModel
+        // Secure logout implementation
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
         {
-            public string Id { get; init; }
-            public string ComplaintId { get; init; }
-            public string Name { get; init; }
-            public string EmpId { get; init; }
-            public string Email { get; init; }
-            public string ContactNumber { get; init; }
-            public DateTime DateTimeCapture { get; init; }
-            public string PictureCaptureLocation { get; init; }
-            public string Comments { get; init; }
-            public string[] PictureUploads { get; init; }
-            public string Status { get; init; }
-            public string CurrentStatus { get; init; }
-        }
-
-        // Added security headers
-        protected override void OnInit(EventArgs e)
-        {
-            base.OnInit(e);
-            Response.Headers.Add("X-Frame-Options", "DENY");
-            Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-            Response.Headers.Add("X-Content-Type-Options", "nosniff");
+            await HttpContext.SignOutAsync();
+            return RedirectToAction("Login", "Account");
         }
     }
 }
