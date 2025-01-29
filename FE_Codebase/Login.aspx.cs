@@ -1,12 +1,13 @@
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
+using System.Data;
 
 namespace PimsApp
 {
@@ -31,34 +32,38 @@ namespace PimsApp
             }
         }
 
-        // Converted to async method for better performance
+        // Updated to async method for better performance
         private async Task<List<string>> GetUserRolesAsync(string email)
         {
             var roles = new List<string>();
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-
+            
             try
             {
-                await using var conn = new SqlConnection(connString);
-                const string query = "SELECT Role FROM EmpDetails WHERE Email = @username";
+                // Use connection string from user secrets or environment variables
+                string connString = _configuration.GetConnectionString("YourConnectionString");
                 
-                await using var cmd = new SqlCommand(query, conn);
-                cmd.Parameters.Add("@username", SqlDbType.NVarChar).Value = email;
-
+                using var conn = new SqlConnection(connString);
+                using var cmd = new SqlCommand("sp_GetUserRoles", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                
+                cmd.Parameters.AddWithValue("@Email", email);
+                
                 await conn.OpenAsync();
-                await using var reader = await cmd.ExecuteReaderAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
                 
                 while (await reader.ReadAsync())
                 {
-                    roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
+                    roles.AddRange(reader["Role"].ToString()
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(r => r.Trim()));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving user roles for email: {Email}", email);
+                _logger.LogError(ex, "Error retrieving user roles for {Email}", email);
                 throw;
             }
-
+            
             return roles;
         }
 
@@ -67,7 +72,7 @@ namespace PimsApp
             Response.Redirect("RegisterComplaint.aspx", true);
         }
 
-        // Converted to async
+        // Updated to async
         protected async void btnLoginUser_Click(object sender, EventArgs e)
         {
             try
@@ -78,25 +83,28 @@ namespace PimsApp
                 // Input validation
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
                 {
-                    ShowError("Please enter both email and password.");
+                    ShowError("Email and password are required.");
                     return;
                 }
 
                 var roles = await GetUserRolesAsync(email);
 
-                if (!roles.Any())
+                if (!roles.Any(r => r is "Admin" or "NormalUser" or "BothRoles"))
                 {
                     ShowError("Invalid username or password.");
                     return;
                 }
 
-                if (await AuthenticateUserAsync(email, HashPassword(password), roles))
+                if (await AuthenticateUserAsync(email, password, roles))
                 {
                     // Store minimal information in session
                     Session["Email"] = email;
-                    Session["Roles"] = string.Join(",", roles);
+                    Session["Roles"] = roles;
                     
-                    // Redirect with anti-forgery token
+                    // Implement anti-forgery token
+                    var antiForgeryToken = GenerateAntiForgeryToken();
+                    Session["AntiForgeryToken"] = antiForgeryToken;
+                    
                     Response.Redirect("Home.aspx", true);
                 }
                 else
@@ -106,50 +114,37 @@ namespace PimsApp
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Login error");
+                _logger.LogError(ex, "Login error for user {Email}", txtUsername.Text);
                 ShowError("An error occurred during login. Please try again.");
             }
         }
 
-        // Converted to async with security improvements
-        private async Task<bool> AuthenticateUserAsync(string username, string hashedPassword, List<string> roles)
+        // Updated authentication with secure password handling
+        private async Task<bool> AuthenticateUserAsync(string email, string password, List<string> roles)
         {
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-            
-            await using var conn = new SqlConnection(connString);
-            var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
-
-            var query = $@"
-                SELECT COUNT(1)
-                FROM EmpDetails
-                WHERE Email = @username
-                AND Password = @password
-                AND ({roleConditions})";
-
-            await using var cmd = new SqlCommand(query, conn);
-            cmd.Parameters.Add("@username", SqlDbType.NVarChar).Value = username;
-            cmd.Parameters.Add("@password", SqlDbType.NVarChar).Value = hashedPassword;
-
-            // Add role parameters
-            for (int i = 0; i < roles.Count; i++)
-            {
-                cmd.Parameters.Add($"@role{i}", SqlDbType.NVarChar).Value = $"%{roles[i]}%";
-            }
-
             try
             {
+                string connString = _configuration.GetConnectionString("YourConnectionString");
+                using var conn = new SqlConnection(connString);
+                using var cmd = new SqlCommand("sp_AuthenticateUser", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@Email", email);
+                cmd.Parameters.AddWithValue("@PasswordHash", HashPassword(password));
+                cmd.Parameters.AddWithValue("@Roles", string.Join(",", roles));
+
                 await conn.OpenAsync();
-                var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-                return count > 0;
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result) > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Authentication error for user: {Username}", username);
+                _logger.LogError(ex, "Authentication error for user {Email}", email);
                 throw;
             }
         }
 
-        // Added password hashing
+        // Secure password hashing
         private string HashPassword(string password)
         {
             byte[] salt = new byte[128 / 8];
@@ -166,6 +161,16 @@ namespace PimsApp
                 numBytesRequested: 256 / 8));
 
             return $"{Convert.ToBase64String(salt)}.{hashed}";
+        }
+
+        private string GenerateAntiForgeryToken()
+        {
+            byte[] tokenBytes = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(tokenBytes);
+            }
+            return Convert.ToBase64String(tokenBytes);
         }
 
         private void ShowError(string message)
