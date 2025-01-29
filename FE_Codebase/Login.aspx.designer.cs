@@ -11,47 +11,65 @@ namespace PimsApp
 {
     public partial class Login
     {
-        // Use readonly modifier for better performance and thread-safety
-        // Change to private for better encapsulation
+        // Use 'private' instead of 'protected' for better encapsulation
+        // Use 'readonly' to prevent accidental modification after initialization
+        // Use more specific control types when possible
+
+        /// <summary>
+        /// Form control.
+        /// </summary>
         private readonly System.Web.UI.HtmlControls.HtmlForm form1;
 
-        // Use nullable reference types for better null-safety
-        private System.Web.UI.WebControls.TextBox? txtUsername;
+        /// <summary>
+        /// Username input control.
+        /// </summary>
+        private readonly System.Web.UI.WebControls.TextBox txtUsername;
 
-        // Use nullable reference types for better null-safety
-        private System.Web.UI.WebControls.TextBox? txtPassword;
+        /// <summary>
+        /// Password input control.
+        /// </summary>
+        private readonly System.Web.UI.WebControls.TextBox txtPassword;
 
-        // Use nullable reference types for better null-safety
-        private System.Web.UI.WebControls.Button? btnLoginUser;
+        /// <summary>
+        /// Login button control.
+        /// </summary>
+        private readonly System.Web.UI.WebControls.Button btnLoginUser;
 
-        // Use nullable reference types for better null-safety
-        private System.Web.UI.WebControls.Label? lblMessage;
+        /// <summary>
+        /// Message display control.
+        /// </summary>
+        private readonly System.Web.UI.WebControls.Label lblMessage;
 
-        // Add a constructor to initialize the form1 field
+        // Constructor to initialize controls
         public Login()
         {
             form1 = new System.Web.UI.HtmlControls.HtmlForm();
+            txtUsername = new System.Web.UI.WebControls.TextBox();
+            txtPassword = new System.Web.UI.WebControls.TextBox();
+            btnLoginUser = new System.Web.UI.WebControls.Button();
+            lblMessage = new System.Web.UI.WebControls.Label();
         }
 
-        // Add a method to validate user input
+        // Method to validate user input
         private bool ValidateInput()
         {
-            if (string.IsNullOrWhiteSpace(txtUsername?.Text) || string.IsNullOrWhiteSpace(txtPassword?.Text))
-            {
-                lblMessage.Text = "Username and password are required.";
-                return false;
-            }
-            return true;
+            // Implement input validation logic here
+            return !string.IsNullOrWhiteSpace(txtUsername.Text) && !string.IsNullOrWhiteSpace(txtPassword.Text);
         }
 
-        // Add a method to handle login logic
-        private void HandleLogin()
+        // Method to handle login
+        protected void btnLoginUser_Click(object sender, EventArgs e)
         {
             if (ValidateInput())
             {
                 // Implement secure login logic here
-                // Use parameterized queries or stored procedures to prevent SQL injection
-                // Use secure password hashing (e.g., bcrypt) for password comparison
+                // Use HTTPS for secure communication
+                // Implement proper password hashing and salting
+                // Use parameterized queries to prevent SQL injection
+            }
+            else
+            {
+                lblMessage.Text = "Please enter both username and password.";
             }
         }
     }
