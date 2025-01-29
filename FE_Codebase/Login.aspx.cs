@@ -8,105 +8,145 @@ using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation; // Added for password hashing
+using Microsoft.Extensions.Configuration; // Added for modern configuration management
 
 namespace PimsApp
 {
     public partial class Login : System.Web.UI.Page
     {
-        // Use a logger instead of directly writing to lblMessage
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private readonly IConfiguration _configuration; // Added for dependency injection
+
+        // Constructor for dependency injection
+        public Login(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Remove empty if statement
+            // Empty method removed as it's not necessary
         }
 
-        // Removed unused GetUserRoles method
+        // Async method for better performance
+        private async Task<List<string>> GetUserRolesAsync(string email)
+        {
+            var roles = new List<string>();
+            var connString = _configuration.GetConnectionString("YourConnectionString"); // Using IConfiguration
+
+            using (var conn = new SqlConnection(connString))
+            {
+                var query = "SELECT Role FROM EmpDetails WHERE Email = @username";
+                using (var cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@username", email);
+                    await conn.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
+                        }
+                    }
+                }
+            }
+            return roles;
+        }
 
         protected void RegisterComplaint_Click(object sender, EventArgs e)
         {
-            Response.Redirect("RegisterComplaint.aspx", false); // Added false to prevent response caching
+            Response.Redirect("RegisterComplaint.aspx", false); // Added 'false' to prevent possible exceptions
         }
 
-        protected void btnLoginUser_Click(object sender, EventArgs e)
+        protected async void btnLoginUser_Click(object sender, EventArgs e)
         {
             string email = txtUsername.Text.Trim();
             string password = txtPassword.Text.Trim();
 
-            // Moved roles retrieval inside AuthenticateUser method
-            if (AuthenticateUser(email, password, out List<string> roles))
+            var roles = await GetUserRolesAsync(email);
+
+            if (roles.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles"))
             {
-                Session["Email"] = email;
-                Session["Roles"] = roles;
-                Response.Redirect("Home.aspx", false); // Added false to prevent response caching
+                if (await AuthenticateUserAsync(email, password, roles))
+                {
+                    Session["Email"] = email;
+                    Session["Roles"] = roles;
+                    Response.Redirect("Home.aspx", false);
+                }
+                else
+                {
+                    ShowErrorMessage("Invalid username or password.");
+                }
             }
             else
             {
-                lblMessage.Visible = true;
-                lblMessage.Text = "Invalid username or password.";
+                ShowErrorMessage("Invalid username or password.");
             }
         }
 
-        private bool AuthenticateUser(string username, string password, out List<string> roles)
+        private async Task<bool> AuthenticateUserAsync(string username, string password, List<string> roles)
         {
-            roles = new List<string>();
-            string connString = ConfigurationManager.ConnectionStrings["YourConnectionString"].ConnectionString;
-            using (SqlConnection conn = new SqlConnection(connString))
+            var connString = _configuration.GetConnectionString("YourConnectionString");
+            using (var conn = new SqlConnection(connString))
             {
-                string query = @"
-                    SELECT Role, PasswordHash, PasswordSalt
-                    FROM EmpDetails
-                    WHERE Email = @username";
+                var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
 
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                var query = $@"
+                    SELECT COUNT(1)
+                    FROM EmpDetails
+                    WHERE Email = @username
+                      AND Password = @password
+                      AND ({roleConditions})";
+
+                using (var cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@username", username);
+                    cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hashing password
+
+                    for (int i = 0; i < roles.Count; i++)
+                    {
+                        cmd.Parameters.AddWithValue($"@role{i}", $"%{roles[i]}%");
+                    }
 
                     try
                     {
-                        conn.Open();
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                string storedHash = reader["PasswordHash"].ToString();
-                                string salt = reader["PasswordSalt"].ToString();
-
-                                // Verify the password
-                                if (VerifyPassword(password, storedHash, salt))
-                                {
-                                    roles = reader["Role"].ToString().Split(',').Select(r => r.Trim()).ToList();
-                                    return true;
-                                }
-                            }
-                        }
+                        await conn.OpenAsync();
+                        int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                        return count > 0;
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex, "An error occurred during user authentication");
+                        // Log the exception
+                        ShowErrorMessage("An error occurred: " + ex.Message);
+                        return false;
                     }
                 }
             }
-            return false;
         }
 
-        // New method for password verification
-        private bool VerifyPassword(string password, string storedHash, string salt)
+        // Method to hash passwords
+        private string HashPassword(string password)
         {
-            string computedHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                password: password,
-                salt: Convert.FromBase64String(salt),
-                prf: KeyDerivationPrf.HMACSHA256,
-                iterationCount: 10000,
-                numBytesRequested: 256 / 8));
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
 
-            return computedHash == storedHash;
+        private void ShowErrorMessage(string message)
+        {
+            lblMessage.Visible = true;
+            lblMessage.Text = message;
         }
 
         protected void btnForgotPassword_Click(object sender, EventArgs e)
         {
-            Response.Redirect("ForgotPassword.aspx", false); // Changed to a more appropriate page and added false to prevent response caching
+            Response.Redirect("ForgotPassword.aspx", false); // Changed to a more appropriate page
         }
     }
 }
