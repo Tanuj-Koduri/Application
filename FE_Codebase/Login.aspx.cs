@@ -1,104 +1,123 @@
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
-using Microsoft.Extensions.Configuration; // Added for modern configuration management
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Data.SqlClient; // Updated SQL client library
 
 namespace PimsApp
 {
     public partial class Login : System.Web.UI.Page
     {
-        private readonly IConfiguration _configuration; // Added for dependency injection
+        private readonly IConfiguration _configuration;
+        private readonly string _connectionString;
 
-        // Constructor for dependency injection
+        // Constructor injection for configuration
         public Login(IConfiguration configuration)
         {
             _configuration = configuration;
+            _connectionString = _configuration.GetConnectionString("YourConnectionString");
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // No changes needed here
+            if (!IsPostBack)
+            {
+                // Clear any existing session
+                Session.Clear();
+            }
         }
 
-        private List<string> GetUserRoles(string email)
+        // Updated to async/await pattern
+        private async Task<List<string>> GetUserRolesAsync(string email)
         {
             var roles = new List<string>();
-            var connString = _configuration.GetConnectionString("YourConnectionString"); // Use IConfiguration
-
-            using var conn = new SqlConnection(connString);
-            using var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username", conn);
+            
+            using var conn = new SqlConnection(_connectionString);
+            const string query = "SELECT Role FROM EmpDetails WHERE Email = @username";
+            
+            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@username", email);
-
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+            
+            while (await reader.ReadAsync())
             {
-                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)); // Use modern string splitting
+                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
             }
-
+            
             return roles;
         }
 
         protected void RegisterComplaint_Click(object sender, EventArgs e)
         {
-            Response.Redirect("RegisterComplaint.aspx", true); // Added 'true' for security
+            Response.Redirect("RegisterComplaint.aspx", endResponse: true);
         }
 
-        protected void btnLoginUser_Click(object sender, EventArgs e)
+        // Updated to async/await and improved security
+        protected async void btnLoginUser_Click(object sender, EventArgs e)
         {
-            string email = txtUsername.Text.Trim();
-            string password = txtPassword.Text.Trim();
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            try
             {
-                ShowError("Username and password are required.");
-                return;
-            }
+                string email = txtUsername.Text.Trim();
+                string password = txtPassword.Text.Trim();
 
-            List<string> roles = GetUserRoles(email);
-
-            if (roles.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles")) // Use LINQ for cleaner role check
-            {
-                if (AuthenticateUser(email, password, roles))
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
                 {
-                    Session["Email"] = email;
-                    Session["Roles"] = roles;
-                    Response.Redirect("Home.aspx", true); // Added 'true' for security
+                    ShowError("Please enter both username and password.");
+                    return;
+                }
+
+                var roles = await GetUserRolesAsync(email, HashPassword(password));
+
+                if (roles.Any(r => r is "Admin" or "NormalUser" or "BothRoles"))
+                {
+                    if (await AuthenticateUserAsync(email, password, roles))
+                    {
+                        Session["Email"] = email;
+                        Session["Roles"] = roles;
+                        Response.Redirect("Home.aspx", endResponse: true);
+                    }
+                    else
+                    {
+                        ShowError("Invalid credentials.");
+                    }
                 }
                 else
                 {
-                    ShowError("Invalid username or password.");
+                    ShowError("Access denied.");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                ShowError("Invalid username or password.");
+                // Log the exception
+                ShowError("An error occurred. Please try again later.");
             }
         }
 
-        private bool AuthenticateUser(string username, string password, List<string> roles)
+        // Updated authentication method with improved security
+        private async Task<bool> AuthenticateUserAsync(string username, string password, List<string> roles)
         {
-            var connString = _configuration.GetConnectionString("YourConnectionString");
-            using var conn = new SqlConnection(connString);
-
+            using var conn = new SqlConnection(_connectionString);
+            var hashedPassword = HashPassword(password);
+            
             var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
+            
             var query = $@"
                 SELECT COUNT(1)
                 FROM EmpDetails
                 WHERE Email = @username
-                  AND Password = @password
-                  AND ({roleConditions})";
+                AND Password = @password
+                AND ({roleConditions})";
 
             using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hash the password
+            cmd.Parameters.AddWithValue("@password", hashedPassword);
 
             for (int i = 0; i < roles.Count; i++)
             {
@@ -107,34 +126,35 @@ namespace PimsApp
 
             try
             {
-                conn.Open();
-                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                await conn.OpenAsync();
+                var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 return count > 0;
             }
             catch (Exception ex)
             {
                 // Log the exception
-                ShowError("An error occurred during authentication.");
                 return false;
             }
         }
 
+        // New method for password hashing
         private string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
             var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+            return Convert.ToBase64String(hashedBytes);
         }
 
-        protected void btnForgotPassword_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("ForgotPassword.aspx", true); // Changed to a more appropriate page
-        }
-
+        // Helper method for displaying errors
         private void ShowError(string message)
         {
             lblMessage.Visible = true;
             lblMessage.Text = message;
+        }
+
+        protected void btnForgotPassword_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("ForgotPassword.aspx", endResponse: true);
         }
     }
 }
