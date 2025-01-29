@@ -4,59 +4,59 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Data.SqlClient; // Updated SQL client library
-using System.Web.UI;
 
 namespace PimsApp
 {
-    public partial class Login : Page
+    public partial class Login : System.Web.UI.Page
     {
         private readonly IConfiguration _configuration; // Dependency injection for configuration
-        private readonly IPasswordHasher<string> _passwordHasher; // For secure password handling
+        private readonly string _connectionString;
 
         // Constructor with dependency injection
         public Login(IConfiguration configuration)
         {
             _configuration = configuration;
-            _passwordHasher = new PasswordHasher<string>();
+            _connectionString = _configuration.GetConnectionString("YourConnectionString");
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                // Initialize any required setup
+                // Clear any existing session
+                Session.Clear();
             }
         }
 
-        // Made async for better performance
+        // Async method to get user roles
         private async Task<List<string>> GetUserRolesAsync(string email)
         {
             var roles = new List<string>();
-            string connString = _configuration.GetConnectionString("YourConnectionString"); // Modern configuration access
-
-            await using var conn = new SqlConnection(connString); // Modern using statement
-            var query = "SELECT Role FROM EmpDetails WHERE Email = @username";
             
-            await using var cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@username", email);
+            using var connection = new SqlConnection(_connectionString);
+            const string query = "SELECT Role FROM EmpDetails WHERE Email = @username";
             
-            await conn.OpenAsync();
-            await using var reader = await cmd.ExecuteReaderAsync();
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@username", email);
+            
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
             
             while (await reader.ReadAsync())
             {
-                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)); // Modern string splitting
+                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
             }
-
+            
             return roles;
         }
 
         protected void RegisterComplaint_Click(object sender, EventArgs e)
         {
-            Response.Redirect("RegisterComplaint.aspx", true); // Added endResponse parameter for security
+            Response.Redirect("RegisterComplaint.aspx", true); // Added endResponse parameter
         }
 
         protected async void btnLoginUser_Click(object sender, EventArgs e)
@@ -66,26 +66,33 @@ namespace PimsApp
                 string email = txtUsername.Text.Trim();
                 string password = txtPassword.Text.Trim();
 
+                // Input validation
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
                 {
-                    ShowError("Email and password are required.");
+                    ShowError("Please enter both username and password.");
                     return;
                 }
 
                 var roles = await GetUserRolesAsync(email, password);
 
+                if (!roles.Any())
+                {
+                    ShowError("Invalid username or password.");
+                    return;
+                }
+
                 if (roles.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)))
                 {
-                    if (await AuthenticateUserAsync(email, password, roles))
+                    if (await AuthenticateUserAsync(email, HashPassword(password), roles))
                     {
-                        // Store minimal session data and use secure session options
+                        // Store minimal information in session
                         Session["Email"] = email;
                         Session["Roles"] = roles;
                         Response.Redirect("Home.aspx", true);
                     }
                     else
                     {
-                        ShowError("Invalid credentials.");
+                        ShowError("Invalid username or password.");
                     }
                 }
                 else
@@ -95,52 +102,68 @@ namespace PimsApp
             }
             catch (Exception ex)
             {
-                // Add proper logging here
+                // Log the exception
                 ShowError("An error occurred. Please try again later.");
             }
         }
 
-        private async Task<bool> AuthenticateUserAsync(string username, string password, List<string> roles)
+        // Hash password using modern cryptography
+        private string HashPassword(string password)
         {
-            string connString = _configuration.GetConnectionString("YourConnectionString");
-            await using var conn = new SqlConnection(connString);
+            byte[] salt = new byte[128 / 8];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
 
-            var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
+            string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: password,
+                salt: salt,
+                prf: KeyDerivationPrf.HMACSHA256,
+                iterationCount: 100000,
+                numBytesRequested: 256 / 8));
+
+            return $"{Convert.ToBase64String(salt)}:{hashed}";
+        }
+
+        private async Task<bool> AuthenticateUserAsync(string username, string hashedPassword, List<string> roles)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            var roleConditions = string.Join(" OR ", roles.Select(role => $"Role LIKE @role{role}"));
+
             var query = $@"
-                SELECT Password
+                SELECT COUNT(1)
                 FROM EmpDetails
                 WHERE Email = @username
+                AND Password = @password
                 AND ({roleConditions})";
 
-            await using var cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@username", username);
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@username", username);
+            command.Parameters.AddWithValue("@password", hashedPassword);
 
-            // Add parameters for each role
-            for (int i = 0; i < roles.Count; i++)
+            foreach (var role in roles)
             {
-                cmd.Parameters.AddWithValue($"@role{i}", $"%{roles[i]}%");
+                command.Parameters.AddWithValue($"@role{role}", $"%{role}%");
             }
 
             try
             {
-                await conn.OpenAsync();
-                var hashedPassword = await cmd.ExecuteScalarAsync() as string;
-                
-                // Verify password using modern hashing
-                return hashedPassword != null && 
-                       _passwordHasher.VerifyHashedPassword(username, hashedPassword, password) != PasswordVerificationResult.Failed;
+                await connection.OpenAsync();
+                int count = Convert.ToInt32(await command.ExecuteScalarAsync());
+                return count > 0;
             }
             catch (Exception ex)
             {
-                // Add proper logging here
-                throw;
+                // Log the exception
+                return false;
             }
         }
 
         private void ShowError(string message)
         {
             lblMessage.Visible = true;
-            lblMessage.Text = HttpUtility.HtmlEncode(message); // Prevent XSS
+            lblMessage.Text = message;
         }
 
         protected void btnForgotPassword_Click(object sender, EventArgs e)
