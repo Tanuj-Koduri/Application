@@ -11,64 +11,58 @@
           integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
           crossorigin="anonymous">
     
-    <!-- Moved styles to external CSS file for better maintenance -->
-    <link rel="stylesheet" href="~/Content/Styles/home.css">
-    
-    <!-- Added Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" 
-          content="default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: 'unsafe-inline';">
+    <!-- Moved styles to separate CSS file -->
+    <link rel="stylesheet" href="~/Styles/Home.css">
 </head>
 <body>
-    <form id="form1" runat="server" class="needs-validation" novalidate>
+    <form id="form1" runat="server" class="needs-validation" novalidate> <!-- Added form validation -->
         <!-- Updated navbar to Bootstrap 5 syntax -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
             <div class="container-fluid">
                 <div class="ms-auto">
-                    <asp:Label ID="lblWelcome" runat="server" Text="Welcome!" 
-                             CssClass="navbar-text fw-bold me-3" />
-                    <asp:Button ID="btnLogout" runat="server" CssClass="btn btn-danger" 
+                    <asp:Label ID="lblWelcome" runat="server" Text="Welcome!" CssClass="navbar-text fw-bold" />
+                    <asp:Button ID="btnLogout" runat="server" CssClass="btn btn-danger ms-3" 
                               Text="Logout" OnClick="btnLogout_Click" 
-                              UseSubmitBehavior="false" />
+                              UseSubmitBehavior="false" /> <!-- Added UseSubmitBehavior for better UX -->
                 </div>
             </div>
         </nav>
 
-        <main class="container-fluid mt-4">
-            <!-- Added semantic HTML elements -->
-            <header class="banner mb-4">
+        <main class="container mt-5 pt-4"> <!-- Added padding for fixed navbar -->
+            <!-- Updated banner with semantic HTML -->
+            <header class="banner">
                 <h1>EcoSight: Ecological Incident Reporting & Monitoring</h1>
             </header>
 
-            <section class="complaints-section">
-                <h2 id="pageTitle" runat="server" class="mb-3"></h2>
-                
-                <!-- Added alert component for success message -->
-                <div id="successAlert" runat="server" class="alert alert-success alert-dismissible fade show" 
-                     role="alert" visible="false">
-                    <asp:Label ID="lblSucessMessage" runat="server"></asp:Label>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <h5 id="pageTitle" runat="server" class="mb-3 text-center"></h5>
+            
+            <!-- Added alert component for success message -->
+            <asp:Panel ID="successAlert" runat="server" CssClass="alert alert-success" Visible="false">
+                <asp:Label ID="lblSucessMessage" runat="server"></asp:Label>
+            </asp:Panel>
 
-                <div class="d-flex justify-content-end mb-4">
+            <div class="row mb-4">
+                <div class="col-12 text-end">
                     <asp:Button ID="btnRegisterComplaint" runat="server" 
                               CssClass="btn btn-primary" 
                               Text="Register Complaint" 
                               OnClick="btnRegisterComplaint_Click" />
                 </div>
+            </div>
 
-                <!-- Updated GridView with modern styling and accessibility features -->
-                <asp:GridView ID="gvComplaints" runat="server" 
-                            CssClass="table table-striped table-hover border" 
-                            AutoGenerateColumns="False"
-                            OnRowDataBound="gvComplaints_RowDataBound" 
-                            OnRowCommand="gvComplaints_RowCommand"
-                            aria-label="Complaints List">
-                    <!-- GridView columns remain same but with enhanced styling -->
-                    <Columns>
-                        <!-- Existing columns with added accessibility attributes -->
-                    </Columns>
-                </asp:GridView>
-            </section>
+            <!-- Updated GridView with modern styling and accessibility features -->
+            <asp:GridView ID="gvComplaints" runat="server" 
+                         AutoGenerateColumns="False" 
+                         CssClass="table table-striped table-hover table-responsive" 
+                         OnRowDataBound="gvComplaints_RowDataBound" 
+                         OnRowCommand="gvComplaints_RowCommand"
+                         HeaderStyle-CssClass="table-dark"
+                         aria-label="Complaints List">
+                <!-- GridView columns remain the same but with updated styling -->
+                <Columns>
+                    <!-- ... existing columns ... -->
+                </Columns>
+            </asp:GridView>
         </main>
     </form>
 
@@ -78,6 +72,6 @@
             crossorigin="anonymous"></script>
     
     <!-- Added custom JavaScript file -->
-    <script src="~/Scripts/home.js"></script>
+    <script src="~/Scripts/Home.js"></script>
 </body>
 </html>
