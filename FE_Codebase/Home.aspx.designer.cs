@@ -11,45 +11,65 @@ namespace PimsApp
 {
     public partial class Home
     {
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required HtmlForm Form { get; set; } // Modernized: Renamed from 'form1' for clarity
+        // Modernized: Use nullable reference types for better null safety
+        // Comment: Enable nullable reference types in project settings
+        
+        /// <summary>
+        /// form1 control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlForm? form1;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required Label WelcomeLabel { get; set; } // Modernized: Renamed from 'lblWelcome' for clarity
+        /// <summary>
+        /// lblWelcome control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label? lblWelcome;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required Button LogoutButton { get; set; } // Modernized: Renamed from 'btnLogout' for clarity
+        /// <summary>
+        /// btnLogout control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button? btnLogout;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required HtmlGenericControl PageTitle { get; set; } // Modernized: Renamed from 'pageTitle' for consistency
+        /// <summary>
+        /// pageTitle control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl? pageTitle;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required Label SuccessMessage { get; set; } // Modernized: Renamed from 'lblSucessMessage' and fixed typo
+        /// <summary>
+        /// lblSucessMessage control.
+        /// </summary>
+        // Modernized: Fixed typo in variable name
+        // Comment: Renamed lblSucessMessage to lblSuccessMessage for correctness
+        protected global::System.Web.UI.WebControls.Label? lblSuccessMessage;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required Button RegisterComplaintButton { get; set; } // Modernized: Renamed from 'btnRegisterComplaint' for clarity
+        /// <summary>
+        /// btnRegisterComplaint control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button? btnRegisterComplaint;
 
-        // Use 'required' keyword for non-nullable reference types
-        // Comment: Enforces null safety at compile-time
-        public required GridView ComplaintsGridView { get; set; } // Modernized: Renamed from 'gvComplaints' for clarity
+        /// <summary>
+        /// gvComplaints control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView? gvComplaints;
 
-        // Modernized: Added a constructor to initialize the controls
-        // Comment: Ensures all required properties are initialized
-        public Home()
+        // Modernized: Added a method to initialize controls
+        // Comment: This helps ensure all controls are properly initialized
+        protected override void OnInit(EventArgs e)
         {
-            Form = new HtmlForm();
-            WelcomeLabel = new Label();
-            LogoutButton = new Button();
-            PageTitle = new HtmlGenericControl();
-            SuccessMessage = new Label();
-            RegisterComplaintButton = new Button();
-            ComplaintsGridView = new GridView();
+            base.OnInit(e);
+            InitializeControls();
+        }
+
+        // Modernized: Added a method to initialize controls
+        // Comment: This helps ensure all controls are properly initialized
+        private void InitializeControls()
+        {
+            form1 ??= new System.Web.UI.HtmlControls.HtmlForm();
+            lblWelcome ??= new System.Web.UI.WebControls.Label();
+            btnLogout ??= new System.Web.UI.WebControls.Button();
+            pageTitle ??= new System.Web.UI.HtmlControls.HtmlGenericControl();
+            lblSuccessMessage ??= new System.Web.UI.WebControls.Label();
+            btnRegisterComplaint ??= new System.Web.UI.WebControls.Button();
+            gvComplaints ??= new System.Web.UI.WebControls.GridView();
         }
     }
 }
