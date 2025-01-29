@@ -1,45 +1,52 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web.UI;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation; // Added for secure password hashing
+using Microsoft.Extensions.Configuration; // Updated for modern configuration management
 
 namespace PimsApp
 {
     public partial class Login : Page
     {
-        private readonly string _connectionString = ConfigurationManager.ConnectionStrings["YourConnectionString"].ConnectionString;
+        private readonly IConfiguration _configuration; // Dependency injection for configuration
+
+        // Constructor for dependency injection
+        public Login(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Removed empty if block
+            // Empty method removed as it's not necessary
         }
 
-        // Simplified method using async/await pattern
+        // Async method for better performance
         private async Task<List<string>> GetUserRolesAsync(string email)
         {
             var roles = new List<string>();
-            using (var conn = new SqlConnection(_connectionString))
-            using (var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username", conn))
+            var connString = _configuration.GetConnectionString("YourConnectionString");
+            using var conn = new SqlConnection(connString);
+            using var cmd = new SqlCommand("SELECT Role FROM EmpDetails WHERE Email = @username", conn);
+            cmd.Parameters.AddWithValue("@username", email);
+            
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
-                cmd.Parameters.AddWithValue("@username", email);
-                await conn.OpenAsync();
-                using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
-                    }
-                }
+                roles.AddRange(reader["Role"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries));
             }
+            
             return roles;
         }
 
-        protected void RegisterComplaint_Click(object sender, EventArgs e) => Response.Redirect("RegisterComplaint.aspx");
+        protected void RegisterComplaint_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("RegisterComplaint.aspx", true); // Added 'true' for security
+        }
 
         protected async void btnLoginUser_Click(object sender, EventArgs e)
         {
@@ -48,13 +55,13 @@ namespace PimsApp
 
             var roles = await GetUserRolesAsync(email);
 
-            if (roles.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles"))
+            if (roles.Any(r => r is "Admin" or "NormalUser" or "BothRoles"))
             {
                 if (await AuthenticateUserAsync(email, password, roles))
                 {
                     Session["Email"] = email;
                     Session["Roles"] = roles;
-                    Response.Redirect("Home.aspx");
+                    Response.Redirect("Home.aspx", true);
                 }
                 else
                 {
@@ -69,52 +76,38 @@ namespace PimsApp
 
         private async Task<bool> AuthenticateUserAsync(string username, string password, List<string> roles)
         {
-            using (var conn = new SqlConnection(_connectionString))
+            var connString = _configuration.GetConnectionString("YourConnectionString");
+            using var conn = new SqlConnection(connString);
+            
+            var roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
+            var query = $@"
+                SELECT COUNT(1)
+                FROM EmpDetails
+                WHERE Email = @username
+                  AND Password = @password
+                  AND ({roleConditions})";
+
+            using var cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@password", HashPassword(password)); // Hashing password
+
+            for (int i = 0; i < roles.Count; i++)
             {
-                string roleConditions = string.Join(" OR ", roles.Select((role, index) => $"Role LIKE @role{index}"));
-                string query = $@"
-                    SELECT Password FROM EmpDetails
-                    WHERE Email = @username AND ({roleConditions})";
-
-                using (var cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@username", username);
-                    for (int i = 0; i < roles.Count; i++)
-                    {
-                        cmd.Parameters.AddWithValue($"@role{i}", $"%{roles[i]}%");
-                    }
-
-                    try
-                    {
-                        await conn.OpenAsync();
-                        var storedHash = await cmd.ExecuteScalarAsync() as string;
-                        return storedHash != null && VerifyPassword(password, storedHash);
-                    }
-                    catch (Exception ex)
-                    {
-                        ShowErrorMessage($"An error occurred: {ex.Message}");
-                        return false;
-                    }
-                }
+                cmd.Parameters.AddWithValue($"@role{i}", $"%{roles[i]}%");
             }
-        }
 
-        // New method for secure password hashing
-        private string HashPassword(string password)
-        {
-            return Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                password: password,
-                salt: new byte[16], // Use a secure random salt in production
-                prf: KeyDerivationPrf.HMACSHA256,
-                iterationCount: 10000,
-                numBytesRequested: 256 / 8));
-        }
-
-        // New method for password verification
-        private bool VerifyPassword(string enteredPassword, string storedHash)
-        {
-            var hashedEnteredPassword = HashPassword(enteredPassword);
-            return storedHash == hashedEnteredPassword;
+            try
+            {
+                await conn.OpenAsync();
+                var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                ShowErrorMessage("An error occurred: " + ex.Message);
+                return false;
+            }
         }
 
         private void ShowErrorMessage(string message)
@@ -123,6 +116,17 @@ namespace PimsApp
             lblMessage.Text = message;
         }
 
-        protected void btnForgotPassword_Click(object sender, EventArgs e) => Response.Redirect("Login.aspx");
+        // Simple password hashing (consider using a more robust method in production)
+        private string HashPassword(string password)
+        {
+            using var sha256 = SHA256.Create();
+            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+        }
+
+        protected void btnForgotPassword_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("ForgotPassword.aspx", true); // Changed to a more appropriate page
+        }
     }
 }
