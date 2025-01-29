@@ -6,14 +6,14 @@
     <meta charset="utf-8"> <!-- Added charset meta tag -->
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Added viewport meta tag for responsiveness -->
     <title>Admin Page - Dashboard</title>
-    <!-- Updated Bootstrap to the latest version -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <!-- Moved styles to a separate CSS file -->
-    <link rel="stylesheet" href="~/styles/home.css">
+    <!-- Updated to Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <!-- Moved styles to an external CSS file for better separation of concerns -->
+    <link rel="stylesheet" href="~/Content/styles.css">
 </head>
 <body>
     <form id="form1" runat="server">
-        <!-- Updated navbar structure for Bootstrap 5 -->
+        <!-- Updated navbar to Bootstrap 5 syntax -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
                 <div class="navbar-nav ms-auto">
@@ -27,26 +27,61 @@
             <div class="banner">
                 EcoSight: Ecological Incident Reporting & Monitoring
             </div>
-            <h5 id="pageTitle" runat="server" class="mb-0"></h5>
+            <h5 id="pageTitle" runat="server" class="mb-3 text-center"></h5>
             <asp:Label ID="lblSucessMessage" runat="server" CssClass="alert alert-success" Visible="false"></asp:Label>
-            <div class="row mb-4 align-items-center">
-                <div class="text-end mb-4">
+            
+            <div class="row mb-4">
+                <div class="col text-end">
                     <asp:Button ID="btnRegisterComplaint" runat="server" CssClass="btn btn-primary" Text="Register Complaint" OnClick="btnRegisterComplaint_Click" />
                 </div>
-                <hr />
-                <!-- Updated GridView with modern Bootstrap classes and responsive design -->
-                <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" CssClass="table table-striped table-bordered table-hover table-responsive" OnRowDataBound="gvComplaints_RowDataBound" OnRowCommand="gvComplaints_RowCommand">
-                    <Columns>
-                        <!-- ... (columns remain the same) ... -->
-                    </Columns>
-                </asp:GridView>
             </div>
+            
+            <!-- Updated GridView with modern Bootstrap classes and added ARIA attributes for accessibility -->
+            <asp:GridView ID="gvComplaints" runat="server" AutoGenerateColumns="False" 
+                          CssClass="table table-striped table-bordered table-hover" 
+                          OnRowDataBound="gvComplaints_RowDataBound" 
+                          OnRowCommand="gvComplaints_RowCommand"
+                          aria-label="Complaints Table">
+                <Columns>
+                    <!-- ... (existing columns) ... -->
+                    
+                    <asp:TemplateField HeaderText="Current Status" Visible="True">
+                        <ItemTemplate>
+                            <div class="form-group" style="width: 150px;">
+                                <asp:DropDownList ID="ddlCurrentStatus" runat="server" CssClass="form-select" 
+                                                  AutoPostBack="True" OnSelectedIndexChanged="ddlCurrentStatus_SelectedIndexChanged">
+                                    <asp:ListItem Text="Not Started" Value="Not Started" />
+                                    <asp:ListItem Text="In Progress" Value="In Progress" />
+                                    <asp:ListItem Text="Resolved" Value="Resolved" />
+                                    <asp:ListItem Text="Re-opened" Value="Re-opened" />
+                                </asp:DropDownList>
+                            </div>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+
+                    <asp:TemplateField HeaderText="Action Taken">
+                        <ItemTemplate>
+                            <asp:HiddenField ID="hfComplaintId" runat="server" Value='<%# Eval("ComplaintId") %>' />
+                            <asp:Label ID="lblheader" runat="server" Text='<%# Eval("Status") %>' CssClass="d-block mb-2" />
+                            <asp:Label ID="lblStatus" runat="server" Text='<%# Eval("Status") %>' CssClass="d-block mb-2" />
+                            <asp:TextBox ID="txtStatus" runat="server" CssClass="form-control mb-2" TextMode="MultiLine" Rows="2" Style="width: 100%;"></asp:TextBox>
+                            <div class="button-group">
+                                <asp:Button ID="btnUpdateStatus" runat="server" Text="Update" CssClass="btn btn-primary mb-2" 
+                                            CommandName="UpdateStatus" CommandArgument="<%# Container.DataItemIndex %>" />
+                                <asp:Button ID="btnEdit" runat="server" Text="Edit" CssClass="btn btn-secondary mb-2" 
+                                            CommandName="Edit" OnClick="btnEditComplaint_Click" 
+                                            CommandArgument="<%# Container.DataItemIndex %>" />
+                            </div>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+            </asp:GridView>
         </div>
     </form>
 
-    <!-- Updated to latest versions of jQuery, Popper.js, and Bootstrap -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl7/1L_dstPt3HV5HzF6Gvk/e3s4Wz6iJgD/+ub2oU" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    <!-- Updated to Bootstrap 5 and added defer attribute for performance -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" 
+            crossorigin="anonymous" defer></script>
 </body>
 </html>
