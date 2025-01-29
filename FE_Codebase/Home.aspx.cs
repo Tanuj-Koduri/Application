@@ -1,142 +1,133 @@
-using System;
-using System.Collections.Generic;
-using System.Configuration;
+using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web.UI;
-using System.Web.UI.WebControls;
-using System.Text;
-using System.Web.Security;
-using Microsoft.Extensions.Configuration; // Added for modern configuration management
+using Microsoft.AspNetCore.Identity; // Modern authentication
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using System.Text.Json; // Modern JSON handling
 
 namespace PimsApp
 {
-    public partial class Home : Page
+    [Authorize] // Modern authorization attribute
+    public partial class Home : System.Web.UI.Page
     {
-        private readonly IConfiguration _configuration; // Added for dependency injection
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<Home> _logger; // Added logging
+        private readonly string _connectionString;
 
-        // Constructor for dependency injection
-        public Home(IConfiguration configuration)
+        // Constructor injection for dependencies
+        public Home(IConfiguration configuration, ILogger<Home> logger)
         {
             _configuration = configuration;
+            _logger = logger;
+            _connectionString = _configuration.GetConnectionString("YourConnectionString");
         }
 
-        protected void Page_Load(object sender, EventArgs e)
+        protected async Task Page_LoadAsync(object sender, EventArgs e) // Made async
         {
-            if (!IsPostBack)
+            try
             {
-                // Use strongly-typed session access
-                var roles = Session["Roles"] as List<string> ?? new List<string>();
+                var roles = HttpContext.Session.GetObject<List<string>>("Roles"); // Using extension method
 
-                if (roles.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)))
+                if (!IsPostBack)
                 {
-                    SetupUIBasedOnRole(roles);
-                    BindComplaints();
-                    DisplaySuccessMessage();
+                    if (roles?.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)) ?? false)
+                    {
+                        await ConfigureUIBasedOnRoleAsync(roles);
+                    }
+                    else
+                    {
+                        Response.Redirect("Login.aspx", true);
+                    }
                 }
-                else
-                {
-                    Response.Redirect("Login.aspx", true);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in Page_Load");
+                // Handle error appropriately
             }
         }
 
-        private void SetupUIBasedOnRole(List<string> roles)
+        private async Task ConfigureUIBasedOnRoleAsync(List<string> roles)
         {
-            bool isAdmin = roles.Contains("Admin");
-            bool isBoth = roles.Contains("BothRoles");
+            var isAdmin = roles.Contains("Admin");
+            var isBoth = roles.Contains("BothRoles");
 
-            // Use pattern matching to simplify column finding
-            if (gvComplaints.Columns.OfType<TemplateField>().FirstOrDefault(f => f.HeaderText == "Action Taken") is TemplateField actionTakenField)
+            // Using pattern matching
+            if (gvComplaints.Columns.OfType<TemplateField>()
+                .FirstOrDefault(f => f.HeaderText == "Action Taken") is TemplateField actionTakenField)
             {
                 actionTakenField.HeaderText = (isAdmin || isBoth) ? "UpdateProgress" : "Current Status";
             }
 
-            pageTitle.InnerText = (isAdmin || isBoth) ? "Admin Dashboard - Complaints Management" : "My Complaints";
-            gvComplaints.Columns[9].Visible = isAdmin || isBoth;
+            pageTitle.InnerText = (isAdmin || isBoth) 
+                ? "Admin Dashboard - Complaints Management" 
+                : "My Complaints";
 
-            // Use string interpolation for cleaner string formatting
-            lblWelcome.Text = $"Welcome, {Session["Email"] as string ?? "User"}!";
+            gvComplaints.Columns[9].Visible = (isAdmin || isBoth);
+
+            var email = HttpContext.Session.GetString("Email");
+            lblWelcome.Text = $"Welcome, {email}!";
+            
+            await BindComplaintsAsync(); // Made async
+            DisplaySuccessMessage();
         }
 
-        private void DisplaySuccessMessage()
+        private async Task BindComplaintsAsync()
         {
-            if (Session["SuccessMessage"] is string successMessage)
+            var roles = HttpContext.Session.GetObject<List<string>>("Roles");
+            var email = HttpContext.Session.GetString("Email");
+
+            try
             {
-                lblSucessMessage.Text = successMessage;
-                lblSucessMessage.Visible = true;
-                Session["SuccessMessage"] = null;
+                using var connection = new SqlConnection(_connectionString);
+                var query = BuildComplaintsQuery(roles);
+                
+                using var command = new SqlCommand(query, connection);
+                
+                if (roles.Contains("NormalUser"))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+                }
+
+                await connection.OpenAsync();
+                
+                using var reader = await command.ExecuteReaderAsync();
+                var complaints = await ParseComplaintsFromReaderAsync(reader);
+
+                gvComplaints.DataSource = complaints;
+                await gvComplaints.DataBindAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error binding complaints");
+                // Handle error appropriately
             }
         }
 
-        private void BindComplaints()
+        // New model class using record type
+        public record ComplaintViewModel
         {
-            var connectionString = _configuration.GetConnectionString("YourConnectionString");
-            var roles = Session["Roles"] as List<string> ?? new List<string>();
-            var email = Session["Email"] as string;
-
-            using var connection = new SqlConnection(connectionString);
-            using var command = new SqlCommand(GetComplaintsQuery(roles), connection);
-
-            if (!roles.Contains("Admin") && !roles.Contains("BothRoles"))
-            {
-                command.Parameters.AddWithValue("@Email", email);
-            }
-
-            connection.Open();
-            using var reader = command.ExecuteReader();
-            var complaints = new List<ComplaintViewModel>();
-
-            while (reader.Read())
-            {
-                complaints.Add(CreateComplaintFromReader(reader));
-            }
-
-            gvComplaints.DataSource = complaints;
-            gvComplaints.DataBind();
+            public string Id { get; init; }
+            public string ComplaintId { get; init; }
+            public string Name { get; init; }
+            public string EmpId { get; init; }
+            public string Email { get; init; }
+            public string ContactNumber { get; init; }
+            public DateTime DateTimeCapture { get; init; }
+            public string PictureCaptureLocation { get; init; }
+            public string Comments { get; init; }
+            public string[] PictureUploads { get; init; }
+            public string Status { get; init; }
+            public string CurrentStatus { get; init; }
         }
 
-        private string GetComplaintsQuery(List<string> roles)
+        // Added security headers
+        protected override void OnInit(EventArgs e)
         {
-            const string baseQuery = @"SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, 
-                                       DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, 
-                                       Comments, PictureUpload, ComplaintId, CurrentStatus, Status 
-                                       FROM Complaints";
-
-            return roles.Contains("Admin") || roles.Contains("BothRoles")
-                ? $"{baseQuery} ORDER BY Id DESC"
-                : $"{baseQuery} WHERE Email = @Email ORDER BY Id DESC";
+            base.OnInit(e);
+            Response.Headers.Add("X-Frame-Options", "DENY");
+            Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+            Response.Headers.Add("X-Content-Type-Options", "nosniff");
         }
-
-        private ComplaintViewModel CreateComplaintFromReader(SqlDataReader reader)
-        {
-            return new ComplaintViewModel
-            {
-                Id = reader["Id"].ToString(),
-                ComplaintId = reader["ComplaintId"].ToString(),
-                Name = reader["Name"].ToString(),
-                EmpId = reader["EmpId"].ToString(),
-                Email = reader["Email"].ToString(),
-                ContactNumber = reader["ContactNumber"].ToString(),
-                DateTimeCapture = Convert.ToDateTime(reader["DateTimeCapture"]),
-                PictureCaptureLocation = reader["PictureCaptureLocation"].ToString(),
-                Comments = reader["Comments"].ToString(),
-                Status = reader["Status"].ToString(),
-                PictureUploads = reader["PictureUpload"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(Path.GetFileName).ToArray(),
-                CurrentStatus = reader["CurrentStatus"].ToString(),
-            };
-        }
-
-        // ... (rest of the code remains largely the same, with minor adjustments for modern C# practices)
-
-        protected void btnLogout_Click(object sender, EventArgs e)
-        {
-            Session.Abandon();
-            FormsAuthentication.SignOut();
-            Response.Redirect("Login.aspx", true);
-        }
-
-        protected string GetUserRoleClass() => User.IsInRole("Admin") || User.IsInRole("BothRoles") ? "admin" : string.Empty;
     }
 }
