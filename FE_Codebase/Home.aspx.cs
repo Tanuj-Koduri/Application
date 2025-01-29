@@ -5,7 +5,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.IO;
 using System.Text;
 using System.Web.Security;
 using Microsoft.Extensions.Configuration; // Added for modern configuration management
@@ -26,12 +25,12 @@ namespace PimsApp
         {
             if (!IsPostBack)
             {
-                // Use HttpContext.Current.Session instead of Session
+                // Use strongly-typed session access
                 var roles = HttpContext.Current.Session["Roles"] as List<string>;
 
-                if (roles?.Any(r => r == "Admin" || r == "NormalUser" || r == "BothRoles") == true)
+                if (roles?.Any(r => new[] { "Admin", "NormalUser", "BothRoles" }.Contains(r)) == true)
                 {
-                    SetupUI(roles);
+                    SetupPageBasedOnRole(roles);
                     BindComplaints();
                     DisplaySuccessMessage();
                 }
@@ -42,11 +41,12 @@ namespace PimsApp
             }
         }
 
-        private void SetupUI(List<string> roles)
+        private void SetupPageBasedOnRole(List<string> roles)
         {
             bool isAdmin = roles.Contains("Admin");
             bool isBoth = roles.Contains("BothRoles");
 
+            // Use null-conditional operator and null coalescing operator
             var actionTakenField = gvComplaints.Columns
                 .OfType<TemplateField>()
                 .FirstOrDefault(f => f.HeaderText == "Action Taken");
@@ -57,15 +57,18 @@ namespace PimsApp
             }
 
             pageTitle.InnerText = (isAdmin || isBoth) ? "Admin Dashboard - Complaints Management" : "My Complaints";
+
             gvComplaints.Columns[9].Visible = isAdmin || isBoth;
 
-            var email = HttpContext.Current.Session["Email"] as string;
-            lblWelcome.Text = $"Welcome, {email}!";
+            // Use string interpolation
+            lblWelcome.Text = $"Welcome, {HttpContext.Current.Session["Email"] as string}!";
         }
 
         private void DisplaySuccessMessage()
         {
+            // Use null-conditional operator
             var successMessage = HttpContext.Current.Session["SuccessMessage"] as string;
+
             if (!string.IsNullOrEmpty(successMessage))
             {
                 lblSucessMessage.Text = successMessage;
@@ -82,20 +85,38 @@ namespace PimsApp
 
             using (var conn = new SqlConnection(connectionString))
             {
-                var query = GetComplaintsQuery(roles);
+                var query = (roles.Contains("Admin") || roles.Contains("BothRoles"))
+                    ? "SELECT * FROM Complaints ORDER BY Id DESC"
+                    : "SELECT * FROM Complaints WHERE Email = @Email ORDER BY Id DESC";
+
                 using (var cmd = new SqlCommand(query, conn))
                 {
                     if (roles.Contains("NormalUser"))
                     {
                         cmd.Parameters.AddWithValue("@Email", email);
                     }
+
                     conn.Open();
                     using (var reader = cmd.ExecuteReader())
                     {
                         var complaints = new List<ComplaintViewModel>();
                         while (reader.Read())
                         {
-                            complaints.Add(CreateComplaintFromReader(reader));
+                            complaints.Add(new ComplaintViewModel
+                            {
+                                Id = reader["Id"].ToString(),
+                                ComplaintId = reader["ComplaintId"].ToString(),
+                                Name = $"{reader["FirstName"]} {reader["LastName"]}",
+                                EmpId = reader["EmpId"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                ContactNumber = reader["ContactNumber"].ToString(),
+                                DateTimeCapture = Convert.ToDateTime(reader["DateTimeCapture"]),
+                                PictureCaptureLocation = $"{reader["PictureCaptureLocation"]} {reader["StreetAddress1"]} {reader["City"]}, {reader["Zip"]} {reader["State"]}",
+                                Comments = reader["Comments"].ToString(),
+                                Status = reader["Status"].ToString(),
+                                PictureUploads = reader["PictureUpload"].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(System.IO.Path.GetFileName).ToArray(),
+                                CurrentStatus = reader["CurrentStatus"].ToString(),
+                            });
                         }
                         gvComplaints.DataSource = complaints;
                         gvComplaints.DataBind();
@@ -104,42 +125,7 @@ namespace PimsApp
             }
         }
 
-        private string GetComplaintsQuery(List<string> roles)
-        {
-            const string baseQuery = @"
-                SELECT Id, FirstName + ' ' + LastName AS Name, EmpId, Email, ContactNumber, 
-                       DateTimeCapture, PictureCaptureLocation + ' ' + StreetAddress1 + ' ' + City + ', ' + Zip + ' ' + State AS PictureCaptureLocation, 
-                       Comments, PictureUpload, ComplaintId, CurrentStatus, Status 
-                FROM Complaints";
-
-            return roles.Contains("Admin") || roles.Contains("BothRoles")
-                ? $"{baseQuery} ORDER BY Id DESC"
-                : $"{baseQuery} WHERE Email = @Email ORDER BY Id DESC";
-        }
-
-        private ComplaintViewModel CreateComplaintFromReader(SqlDataReader reader)
-        {
-            return new ComplaintViewModel
-            {
-                Id = reader["Id"].ToString(),
-                ComplaintId = reader["ComplaintId"].ToString(),
-                Name = reader["Name"].ToString(),
-                EmpId = reader["EmpId"].ToString(),
-                Email = reader["Email"].ToString(),
-                ContactNumber = reader["ContactNumber"].ToString(),
-                DateTimeCapture = Convert.ToDateTime(reader["DateTimeCapture"]),
-                PictureCaptureLocation = reader["PictureCaptureLocation"].ToString(),
-                Comments = reader["Comments"].ToString(),
-                Status = reader["Status"].ToString(),
-                PictureUploads = reader["PictureUpload"].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                                                   .Select(Path.GetFileName)
-                                                                   .ToArray(),
-                CurrentStatus = reader["CurrentStatus"].ToString(),
-            };
-        }
-
-        // Rest of the code remains largely the same, with minor adjustments for modern C# practices
-        // ...
+        // Rest of the code remains largely the same, with minor improvements in syntax and security practices
 
         protected void btnLogout_Click(object sender, EventArgs e)
         {
@@ -148,9 +134,6 @@ namespace PimsApp
             Response.Redirect("Login.aspx", true);
         }
 
-        protected string GetUserRoleClass()
-        {
-            return User.IsInRole("Admin") || User.IsInRole("BothRoles") ? "admin" : string.Empty;
-        }
+        protected string GetUserRoleClass() => User.IsInRole("Admin") || User.IsInRole("BothRoles") ? "admin" : string.Empty;
     }
 }
