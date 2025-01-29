@@ -11,44 +11,45 @@ namespace PimsApp
 {
     public partial class Home
     {
-        // Modernized: Use of nullable reference types
-        // Modernized: Changed to public properties instead of protected fields for better encapsulation
-        // Modernized: Use of 'required' keyword for non-nullable properties
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required HtmlForm Form { get; set; } // Modernized: Renamed from 'form1' for clarity
 
-        /// <summary>
-        /// form1 control.
-        /// </summary>
-        public required HtmlForm Form1 { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required Label WelcomeLabel { get; set; } // Modernized: Renamed from 'lblWelcome' for clarity
 
-        /// <summary>
-        /// lblWelcome control.
-        /// </summary>
-        public required Label LblWelcome { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required Button LogoutButton { get; set; } // Modernized: Renamed from 'btnLogout' for clarity
 
-        /// <summary>
-        /// btnLogout control.
-        /// </summary>
-        public required Button BtnLogout { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required HtmlGenericControl PageTitle { get; set; } // Modernized: Renamed from 'pageTitle' for consistency
 
-        /// <summary>
-        /// pageTitle control.
-        /// </summary>
-        public required HtmlGenericControl PageTitle { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required Label SuccessMessage { get; set; } // Modernized: Renamed from 'lblSucessMessage' and fixed typo
 
-        /// <summary>
-        /// lblSucessMessage control.
-        /// </summary>
-        // Modernized: Fixed typo in property name
-        public required Label LblSuccessMessage { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required Button RegisterComplaintButton { get; set; } // Modernized: Renamed from 'btnRegisterComplaint' for clarity
 
-        /// <summary>
-        /// btnRegisterComplaint control.
-        /// </summary>
-        public required Button BtnRegisterComplaint { get; set; }
+        // Use 'required' keyword for non-nullable reference types
+        // Comment: Enforces null safety at compile-time
+        public required GridView ComplaintsGridView { get; set; } // Modernized: Renamed from 'gvComplaints' for clarity
 
-        /// <summary>
-        /// gvComplaints control.
-        /// </summary>
-        public required GridView GvComplaints { get; set; }
+        // Modernized: Added a constructor to initialize the controls
+        // Comment: Ensures all required properties are initialized
+        public Home()
+        {
+            Form = new HtmlForm();
+            WelcomeLabel = new Label();
+            LogoutButton = new Button();
+            PageTitle = new HtmlGenericControl();
+            SuccessMessage = new Label();
+            RegisterComplaintButton = new Button();
+            ComplaintsGridView = new GridView();
+        }
     }
 }
